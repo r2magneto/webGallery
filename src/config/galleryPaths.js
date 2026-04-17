@@ -1,8 +1,10 @@
+import { publicAssetUrl } from '../utils/publicAssetUrl.js'
+
 /**
  * Zentrale „Schubladen“-Logik: welche layout.json gehört zu welchem Bilder-Unterordner.
  *
  * ─── Gallery 03+ hinzufügen ─────────────────────────────────────────────
- * 1. Hier Eintrag: 'layout3.json': { imagesBasePath: '/images/gallery3/' }
+ * 1. Hier Eintrag: 'layout3.json': { imagesBasePath: 'images/gallery3/' } (relativ zu public/)
  * 2. apiConfig.js: ALLOWED_LAYOUT_BASENAMES ergänzen (und ggf. App.vue Tabs)
  * 3. App.vue: CONFIG_G3, Tab, scrollByConfig, GalleryModule/Editor-Verdrahtung
  * 4. public/layout3.json + public/images/gallery3/manifest.json anlegen
@@ -11,23 +13,21 @@
 
 /**
  * Schlüssel = Dateiname unter public/ (z. B. layout.json).
- * GalleryModule + Editor: layout.json → Präfix /images/gallery1/, layout2.json → /images/gallery2/.
+ * `imagesBasePath` = Pfad unter public/ (ohne führenden Slash); die echte URL nutzt import.meta.env.BASE_URL.
  */
 export const GALLERY_PATHS_BY_LAYOUT_FILE = {
   'layout.json': {
-    /** Öffentlicher URL-Pfad; physische Dateien: public/images/gallery1/ */
-    imagesBasePath: '/images/gallery1/',
+    imagesBasePath: 'images/gallery1/',
   },
   'layout2.json': {
-    imagesBasePath: '/images/gallery2/',
+    imagesBasePath: 'images/gallery2/',
   },
 }
 
 const DEFAULT_LAYOUT = 'layout.json'
 
 /**
- * Basis-URL für Bilder dieser Galerie (mit trailing slash).
- * Zentrale Variable zum späteren Anpassen / Erweitern.
+ * Basis-URL für Bilder dieser Galerie (mit trailing slash), inkl. Vite-Basis z. B. /webGallery/.
  */
 export function imagesBasePathForLayoutConfig(configPath) {
   const key =
@@ -35,8 +35,10 @@ export function imagesBasePathForLayoutConfig(configPath) {
       ? configPath.trim()
       : DEFAULT_LAYOUT
   const entry = GALLERY_PATHS_BY_LAYOUT_FILE[key]
-  if (entry?.imagesBasePath) return entry.imagesBasePath
-  return GALLERY_PATHS_BY_LAYOUT_FILE[DEFAULT_LAYOUT].imagesBasePath
+  const rel = entry?.imagesBasePath
+    ? entry.imagesBasePath
+    : GALLERY_PATHS_BY_LAYOUT_FILE[DEFAULT_LAYOUT].imagesBasePath
+  return publicAssetUrl(rel)
 }
 
 /**

@@ -1,8 +1,9 @@
 /**
  * Statische Galerie: Layout-JSON und Bilderliste liegen unter `public/` und werden per URL geladen.
- * Unterstützte Layout-Dateien (Root von public/, z. B. `/layout.json`).
+ * URLs enthalten import.meta.env.BASE_URL (z. B. `/webGallery/layout.json` auf GitHub Pages).
  */
 import { imagesBasePathForLayoutConfig } from './config/galleryPaths.js'
+import { publicAssetUrl } from './utils/publicAssetUrl.js'
 
 const ALLOWED_LAYOUT_BASENAMES = new Set(['layout.json', 'layout2.json'])
 
@@ -12,10 +13,10 @@ function safeLayoutBasename(configFile) {
   return ALLOWED_LAYOUT_BASENAMES.has(name) ? name : 'layout.json'
 }
 
-/** Öffentlicher Pfad relativ zur Site-Root (Vite & jeder statische Host). */
+/** Öffentlicher Pfad inkl. Vite-`base` (GitHub Pages: `/webGallery/layout.json`). */
 export function layoutPublicUrl(configFile = 'layout.json') {
   const name = safeLayoutBasename(configFile)
-  return `/${encodeURI(name)}`
+  return publicAssetUrl(encodeURI(name))
 }
 
 /**
