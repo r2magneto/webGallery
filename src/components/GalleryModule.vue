@@ -11,7 +11,9 @@ import {
 import { GridLayout, GridItem } from 'vue-grid-layout-v3'
 import { fetchGalleryLayoutItems } from '../apiConfig.js'
 import { resolveGalleryImageSrc } from '../config/galleryPaths.js'
+import { getLenis, resizeLenis, scrollWindowToY } from '../lenisClient.js'
 import { squareRowHeightPx } from '../utils/gridAspect.js'
+import GalleryScrollbar from './GalleryScrollbar.vue'
 
 const props = defineProps({
   /** Layout-JSON im public-Ordner (z. B. layout.json). */
@@ -51,55 +53,6 @@ const MORPH_CLOSE_FADE_MS = 170
 /** Kachel-Hover (Zoom) */
 const TILE_SPRING = 'cubic-bezier(0.36, 1.06, 0.52, 1)'
 
-/** Kachel-Parallax: seitlich etwas weniger, vertikal etwas stärker */
-const PARALLAX_MAX_PX_X = 52
-const PARALLAX_MAX_PX_Y = 62
-const PARALLAX_LERP = 0.065
-
-/** Schließen-Zone: kompaktes Inline-SVG als data-URL (Base64, gute Browser-Kompatibilität) */
-const LB_CLOSE_CURSOR = (() => {
-  const svg =
-    '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">' +
-    '<path fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" d="M9 9l14 14M23 9L9 23"/>' +
-    '</svg>'
-  return `url("data:image/svg+xml;base64,${btoa(svg)}") 16 16, pointer`
-})()
-
-function svgCursorFromMarkup(svgMarkup) {
-  return `url("data:image/svg+xml;base64,${btoa(svgMarkup)}") 16 16, pointer`
-}
-
-/** Rand-Scroll-Zonen: schlichte Pfeile (zinc) */
-const SCROLL_CURSOR_UP = svgCursorFromMarkup(
-  '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">' +
-    '<path fill="none" stroke="#a1a1aa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M16 24V9M9 16l7-7 7 7"/>' +
-    '</svg>',
-)
-const SCROLL_CURSOR_DOWN = svgCursorFromMarkup(
-  '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">' +
-    '<path fill="none" stroke="#a1a1aa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M16 8v15M9 16l7 7 7-7"/>' +
-    '</svg>',
-)
-
-/** Langsames Grundtempo an der vertikalen Mitte (untere Hälfte: sanft nach unten) */
-const SCROLL_BASE_PX_S = 130
-/** Max. Geschwindigkeit am Rand — „Turbo“ für sehr lange Galerien */
-const SCROLL_MAX_PX_S = 14000
-/**
- * Joystick-Kurve: hohe Potenz = exponentiell mehr Speed je weiter von der Mitte
- */
-const SCROLL_EDGE_POWER = 3.65
-/** Lerp Soll-↔Ist-Geschwindigkeit (hoch = schnelleres Einpendeln, weiterhin geglättet) */
-const SCROLL_VEL_RESPONSIVE = 5.8
-/** Ausrollen nach Loslassen */
-const SCROLL_FRICTION = 5.4
-const SCROLL_VEL_STOP = 5
-
-/** Hintergrund-Raster: ~12,5 % der Scroll-Distanz → wirkt „tiefer“ als die Kachelebene */
-const GRID_SCROLL_PARALLAX = 0.125
-/** Maus-Drift Raster: höher als Kachel-Anteil → Hintergrund bewegt sich insgesamt spürbarer */
-const GRID_MOUSE_PARALLAX_FRAC = 0.26
-
 const layout = ref([])
 const loadState = ref('loading')
 const revealTiles = ref(false)
@@ -122,90 +75,11 @@ function bindGridHostResizeObserver() {
     gridHostResizeObserver = new ResizeObserver((entries) => {
       const w = entries[0]?.contentRect?.width
       if (w != null && w > 0) gridHostWidth.value = w
+      resizeLenis()
     })
     gridHostResizeObserver.observe(el)
   }
 }
-
-const parallaxX = ref(0)
-const parallaxY = ref(0)
-const parallaxTargetX = ref(0)
-const parallaxTargetY = ref(0)
-let parallaxRafId = null
-
-const gridParallaxScrollY = ref(0)
-let gridParallaxScrollRafId = null
-
-const gridParallaxMouseX = ref(0)
-const gridParallaxMouseY = ref(0)
-const gridParallaxMouseTargetX = ref(0)
-const gridParallaxMouseTargetY = ref(0)
-
-const gridParallaxLayerStyle = computed(() => ({
-  transform: `translate3d(${gridParallaxMouseX.value}px, ${gridParallaxMouseY.value - gridParallaxScrollY.value}px, 0)`,
-}))
-
-function syncGridParallaxFromScroll() {
-  gridParallaxScrollY.value = window.scrollY * GRID_SCROLL_PARALLAX
-}
-
-function scheduleGridParallaxFromScroll() {
-  if (gridParallaxScrollRafId != null) return
-  gridParallaxScrollRafId = requestAnimationFrame(() => {
-    gridParallaxScrollRafId = null
-    syncGridParallaxFromScroll()
-  })
-}
-
-function attachGridScrollParallaxListener() {
-  window.addEventListener('scroll', scheduleGridParallaxFromScroll, {
-    passive: true,
-  })
-}
-
-function detachGridScrollParallaxListener() {
-  window.removeEventListener('scroll', scheduleGridParallaxFromScroll)
-  if (gridParallaxScrollRafId != null) {
-    cancelAnimationFrame(gridParallaxScrollRafId)
-    gridParallaxScrollRafId = null
-  }
-}
-
-function onWindowMouseMoveForGridParallax(e) {
-  const el = viewerRootRef.value
-  if (
-    !el ||
-    loadState.value !== 'idle' ||
-    layout.value.length === 0
-  ) {
-    return
-  }
-  const rect = el.getBoundingClientRect()
-  if (rect.width <= 0 || rect.height <= 0) return
-  const nx = (e.clientX - rect.left) / rect.width - 0.5
-  const ny = (e.clientY - rect.top) / rect.height - 0.5
-  const ax = GRID_MOUSE_PARALLAX_FRAC * 2 * PARALLAX_MAX_PX_X
-  const ay = GRID_MOUSE_PARALLAX_FRAC * 2 * PARALLAX_MAX_PX_Y
-  gridParallaxMouseTargetX.value = -nx * ax
-  gridParallaxMouseTargetY.value = -ny * ay
-}
-
-function attachGridMouseParallaxListener() {
-  window.addEventListener('mousemove', onWindowMouseMoveForGridParallax, {
-    passive: true,
-  })
-}
-
-function detachGridMouseParallaxListener() {
-  window.removeEventListener('mousemove', onWindowMouseMoveForGridParallax)
-}
-
-/** Viewport-Rand-Scroll (Maus halten) */
-let lastPointerClientY = 0
-let scrollDragActive = false
-let scrollVelPxS = 0
-let scrollPhysicsRafId = null
-let lastScrollPhysicsTs = 0
 
 /** null = zu */
 const lightboxIndex = ref(null)
@@ -277,10 +151,6 @@ const hasLightboxCaption = computed(
   () => currentLightboxCaptionRaw.value.trim() !== '',
 )
 
-const parallaxLayerStyle = computed(() => ({
-  transform: `translate3d(${parallaxX.value}px, ${parallaxY.value}px, 0)`,
-}))
-
 function clearMorphTimer() {
   if (morphFinishTimer != null) {
     clearTimeout(morphFinishTimer)
@@ -290,6 +160,157 @@ function clearMorphTimer() {
 
 function escapeAttrSelectorValue(s) {
   return String(s).replace(/\\/g, '\\\\').replace(/"/g, '\\"')
+}
+
+/** „Gaspedal“: Hintergrund festhalten → sanft beschleunigen / nach Loslassen auslaufen */
+const gridShellRef = ref(null)
+/** Leer oder globale Cursor-Klasse (.cursor-up / .cursor-dn) für Grid-Hintergrund */
+const gridShellCursorClass = ref('')
+const gasPedalHeld = ref(false)
+
+let gasVelPxPerSec = 0
+let gasRafId = 0
+let gasLastTs = 0
+let gasPointerId = -1
+let lastGasClientY = 0
+/** Max. Scrollgeschwindigkeit (px/s) am oberen/unteren Bildschirmrand */
+const GAS_MAX_PX_PER_SEC = 2600
+/** Annäherung der Ist-Geschwindigkeit an Soll (1/s, größer = schneller Ansprechen) */
+const GAS_VEL_LERP_PER_S = 10
+
+function isGasPedalBackgroundTarget(target) {
+  if (!(target instanceof Element)) return false
+  if (target.closest('.viewer-tile-btn')) return false
+  if (target.closest('button, a, input, textarea, select, label')) return false
+  if (target.closest('[contenteditable="true"]')) return false
+  return true
+}
+
+function rawGasDesiredVelocityPxPerSec(clientY) {
+  const h = window.innerHeight
+  if (h <= 0) return 0
+  const half = h * 0.5
+  const norm = Math.max(-1, Math.min(1, (clientY - half) / half))
+  return norm * GAS_MAX_PX_PER_SEC
+}
+
+function gasPedalFrame(ts) {
+  gasRafId = 0
+  const lenis = getLenis()
+  if (!lenis) return
+
+  const dt =
+    gasLastTs > 0 ? Math.min(0.055, Math.max(0.001, (ts - gasLastTs) / 1000)) : 1 / 60
+  gasLastTs = ts
+
+  const desired = gasPedalHeld.value
+    ? rawGasDesiredVelocityPxPerSec(lastGasClientY)
+    : 0
+  const alpha = 1 - Math.exp(-GAS_VEL_LERP_PER_S * dt)
+  gasVelPxPerSec += (desired - gasVelPxPerSec) * alpha
+
+  const limit = lenis.dimensions.limit.y
+  let next = lenis.scroll + gasVelPxPerSec * dt
+  const atTop = next <= 0 && gasVelPxPerSec < 0
+  const atBottom = next >= limit && gasVelPxPerSec > 0
+  if (atTop) {
+    next = 0
+    gasVelPxPerSec = 0
+  } else if (atBottom) {
+    next = limit
+    gasVelPxPerSec = 0
+  }
+
+  lenis.scrollTo(next, { immediate: true })
+
+  const coasting = Math.abs(gasVelPxPerSec) > 5
+  if (gasPedalHeld.value || coasting) {
+    gasRafId = requestAnimationFrame(gasPedalFrame)
+  } else {
+    gasVelPxPerSec = 0
+    gasLastTs = 0
+  }
+}
+
+function ensureGasPedalLoop() {
+  if (!gasRafId) {
+    gasLastTs = 0
+    gasRafId = requestAnimationFrame(gasPedalFrame)
+  }
+}
+
+function stopGasPedalLoop() {
+  if (gasRafId) {
+    cancelAnimationFrame(gasRafId)
+    gasRafId = 0
+  }
+  gasLastTs = 0
+  gasVelPxPerSec = 0
+}
+
+function onGasPedalPointerMove(e) {
+  if (!gasPedalHeld.value || e.pointerId !== gasPointerId) return
+  lastGasClientY = e.clientY
+}
+
+function onGasPedalPointerUp(e) {
+  if (e.pointerId !== gasPointerId) return
+  gasPedalHeld.value = false
+  gasPointerId = -1
+  try {
+    gridShellRef.value?.releasePointerCapture(e.pointerId)
+  } catch (_) {
+    /* noop */
+  }
+  window.removeEventListener('pointermove', onGasPedalPointerMove, true)
+  window.removeEventListener('pointerup', onGasPedalPointerUp, true)
+  window.removeEventListener('pointercancel', onGasPedalPointerUp, true)
+  if (!gasRafId && Math.abs(gasVelPxPerSec) > 5) {
+    ensureGasPedalLoop()
+  }
+}
+
+function onGridShellPointerDownGas(e) {
+  if (e.button !== 0 || e.pointerType !== 'mouse') return
+  if (!layout.value.length || loadState.value !== 'idle') return
+  if (lightboxOpen.value) return
+  const t = e.target
+  if (!isGasPedalBackgroundTarget(t)) return
+
+  e.preventDefault()
+
+  gasPointerId = e.pointerId
+  lastGasClientY = e.clientY
+  gasPedalHeld.value = true
+
+  try {
+    if (gridShellRef.value instanceof HTMLElement) {
+      gridShellRef.value.setPointerCapture(e.pointerId)
+    }
+  } catch (_) {
+    /* noop */
+  }
+
+  window.addEventListener('pointermove', onGasPedalPointerMove, true)
+  window.addEventListener('pointerup', onGasPedalPointerUp, true)
+  window.addEventListener('pointercancel', onGasPedalPointerUp, true)
+
+  ensureGasPedalLoop()
+}
+
+function onGridShellPointerMoveCursor(e) {
+  if (gasPedalHeld.value) return
+  const t = e.target
+  if (t instanceof Element && t.closest('.viewer-tile-btn')) {
+    gridShellCursorClass.value = ''
+    return
+  }
+  gridShellCursorClass.value =
+    e.clientY < window.innerHeight * 0.5 ? 'cursor-up' : 'cursor-dn'
+}
+
+function onGridShellPointerLeaveCursor() {
+  if (!gasPedalHeld.value) gridShellCursorClass.value = ''
 }
 
 /** Lightbox ↔ Grid: aktives Thumbnail vertikal in den Viewport zentrieren (Zoom-Back trifft sichtbare Kachel). */
@@ -305,10 +326,7 @@ function scrollThumbnailIntoViewCentered(index) {
   if (r.height <= 0 && r.width <= 0) return
   const cy = r.top + r.height / 2
   const target = window.scrollY + cy - window.innerHeight / 2
-  window.scrollTo({
-    top: Math.max(0, target),
-    behavior: 'smooth',
-  })
+  scrollWindowToY(target)
 }
 
 function fitContain(nw, nh, maxW, maxH) {
@@ -724,6 +742,13 @@ const lightboxOpen = computed(
   () => lightboxIndex.value !== null && viewerMode.value !== 'idle',
 )
 
+const galleryScrollbarActive = computed(
+  () =>
+    loadState.value === 'idle' &&
+    layout.value.length > 0 &&
+    !lightboxOpen.value,
+)
+
 const lightboxBackdropStyle = computed(() => ({
   opacity: lbBackdropOpacity.value,
   transitionProperty: 'opacity',
@@ -731,168 +756,11 @@ const lightboxBackdropStyle = computed(() => ({
   transitionTimingFunction: 'ease-out',
 }))
 
-function onParallaxMove(e) {
-  const el = viewerRootRef.value
-  if (!el || lightboxOpen.value) return
-  const rect = el.getBoundingClientRect()
-  if (rect.width <= 0 || rect.height <= 0) return
-  const nx = (e.clientX - rect.left) / rect.width - 0.5
-  const ny = (e.clientY - rect.top) / rect.height - 0.5
-  parallaxTargetX.value = -nx * 2 * PARALLAX_MAX_PX_X
-  parallaxTargetY.value = -ny * 2 * PARALLAX_MAX_PX_Y
-}
-
-function onParallaxLeave() {
-  parallaxTargetX.value = 0
-  parallaxTargetY.value = 0
-  gridParallaxMouseTargetX.value = 0
-  gridParallaxMouseTargetY.value = 0
-}
-
-function parallaxTick() {
-  parallaxX.value += (parallaxTargetX.value - parallaxX.value) * PARALLAX_LERP
-  parallaxY.value += (parallaxTargetY.value - parallaxY.value) * PARALLAX_LERP
-  gridParallaxMouseX.value +=
-    (gridParallaxMouseTargetX.value - gridParallaxMouseX.value) * PARALLAX_LERP
-  gridParallaxMouseY.value +=
-    (gridParallaxMouseTargetY.value - gridParallaxMouseY.value) * PARALLAX_LERP
-  parallaxRafId = requestAnimationFrame(parallaxTick)
-}
-
-function galleryReadyForEdgeScroll() {
-  return (
-    layout.value.length > 0 &&
-    loadState.value === 'idle' &&
-    !lightboxOpen.value
-  )
-}
-
-/**
- * Joystick: obere Hälfte nach oben, untere nach unten. Mitte: SCROLL_BASE_PX_S;
- * zum Rand Potenzkurve → hohe Endgeschwindigkeit, Übergang per SCROLL_VEL_RESPONSIVE geglättet.
- */
-function scrollDriveFromClientY(clientY) {
-  const h = window.innerHeight
-  if (h <= 0) return { targetVel: 0, cursorHalf: 'lower' }
-  const center = h * 0.5
-  const halfLen = center
-  const distNorm = halfLen > 0 ? Math.abs(clientY - center) / halfLen : 0
-  const blend = Math.pow(Math.min(1, Math.max(0, distNorm)), SCROLL_EDGE_POWER)
-  const mag =
-    SCROLL_BASE_PX_S + blend * (SCROLL_MAX_PX_S - SCROLL_BASE_PX_S)
-  const dir = clientY < center ? -1 : 1
-  const targetVel = dir * mag
-  const cursorHalf = clientY < center ? 'upper' : 'lower'
-  return { targetVel, cursorHalf }
-}
-
-function clearBodyScrollCursor() {
-  document.body.style.cursor = ''
-}
-
-function updateEdgeScrollCursorFromEvent(e) {
-  if (!galleryReadyForEdgeScroll()) {
-    clearBodyScrollCursor()
-    return
-  }
-  const el = e.target
-  if (el instanceof Element && el.closest('.viewer-tile-btn')) {
-    clearBodyScrollCursor()
-    return
-  }
-  const { cursorHalf } = scrollDriveFromClientY(e.clientY)
-  document.body.style.cursor =
-    cursorHalf === 'upper' ? SCROLL_CURSOR_UP : SCROLL_CURSOR_DOWN
-}
-
-function onWindowMouseMoveForScroll(e) {
-  lastPointerClientY = e.clientY
-  updateEdgeScrollCursorFromEvent(e)
-}
-
-function onWindowMouseDownForScroll(e) {
-  if (!galleryReadyForEdgeScroll()) return
-  if (e.button !== 0) return
-  const t = e.target
-  if (t instanceof Element) {
-    if (t.closest('.viewer-tile-btn')) return
-    if (t.closest('[role="dialog"]')) return
-  }
-  lastPointerClientY = e.clientY
-  scrollDragActive = true
-  e.preventDefault()
-  ensureScrollPhysicsLoop()
-}
-
-function onWindowMouseUpForScroll() {
-  scrollDragActive = false
-}
-
-function scrollPhysicsStep(ts) {
-  const dt = lastScrollPhysicsTs
-    ? Math.min(0.045, (ts - lastScrollPhysicsTs) / 1000)
-    : 1 / 60
-  lastScrollPhysicsTs = ts
-
-  let targetVel = 0
-  if (scrollDragActive && galleryReadyForEdgeScroll()) {
-    targetVel = scrollDriveFromClientY(lastPointerClientY).targetVel
-    const k = 1 - Math.exp(-SCROLL_VEL_RESPONSIVE * dt)
-    scrollVelPxS += (targetVel - scrollVelPxS) * k
-  } else {
-    scrollVelPxS *= Math.exp(-SCROLL_FRICTION * dt)
-  }
-
-  const dy = scrollVelPxS * dt
-  if (Math.abs(dy) >= 0.2) {
-    window.scrollBy(0, dy)
-  }
-
-  const keep =
-    (scrollDragActive && galleryReadyForEdgeScroll()) ||
-    Math.abs(scrollVelPxS) > SCROLL_VEL_STOP
-  if (keep) {
-    scrollPhysicsRafId = requestAnimationFrame(scrollPhysicsStep)
-  } else {
-    scrollPhysicsRafId = null
-    lastScrollPhysicsTs = 0
-    scrollVelPxS = 0
-  }
-}
-
-function ensureScrollPhysicsLoop() {
-  if (scrollPhysicsRafId == null) {
-    scrollPhysicsRafId = requestAnimationFrame(scrollPhysicsStep)
-  }
-}
-
-function attachEdgeScrollListeners() {
-  window.addEventListener('mousemove', onWindowMouseMoveForScroll)
-  window.addEventListener('mousedown', onWindowMouseDownForScroll)
-  window.addEventListener('mouseup', onWindowMouseUpForScroll)
-  window.addEventListener('blur', onWindowMouseUpForScroll)
-}
-
-function detachEdgeScrollListeners() {
-  window.removeEventListener('mousemove', onWindowMouseMoveForScroll)
-  window.removeEventListener('mousedown', onWindowMouseDownForScroll)
-  window.removeEventListener('mouseup', onWindowMouseUpForScroll)
-  window.removeEventListener('blur', onWindowMouseUpForScroll)
-  scrollDragActive = false
-  clearBodyScrollCursor()
-  if (scrollPhysicsRafId != null) {
-    cancelAnimationFrame(scrollPhysicsRafId)
-    scrollPhysicsRafId = null
-    lastScrollPhysicsTs = 0
-    scrollVelPxS = 0
-  }
-}
-
 function restoreInitialScroll() {
   const top = Math.max(0, props.initialScrollY)
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
-      window.scrollTo({ top, left: 0, behavior: 'instant' })
+      scrollWindowToY(top, { immediate: true })
     })
   })
 }
@@ -905,11 +773,6 @@ async function loadGalleryFromConfig() {
   clearMorphCloseFadeTimer()
   clearCaptionFadeBeforeCloseTimer()
   lbCaptionFastHide.value = false
-
-  if (parallaxRafId != null) {
-    cancelAnimationFrame(parallaxRafId)
-    parallaxRafId = null
-  }
 
   revealTiles.value = false
   loadState.value = 'loading'
@@ -931,6 +794,12 @@ async function loadGalleryFromConfig() {
     await nextTick()
     bindGridHostResizeObserver()
   }
+
+  await nextTick()
+  resizeLenis()
+  requestAnimationFrame(() => {
+    resizeLenis()
+  })
 }
 
 onMounted(async () => {
@@ -938,13 +807,6 @@ onMounted(async () => {
   restoreInitialScroll()
 
   window.addEventListener('keydown', onLightboxKeydown)
-  attachEdgeScrollListeners()
-  attachGridScrollParallaxListener()
-  attachGridMouseParallaxListener()
-  syncGridParallaxFromScroll()
-  if (layout.value.length > 0) {
-    parallaxRafId = requestAnimationFrame(parallaxTick)
-  }
 })
 
 watch(
@@ -952,21 +814,8 @@ watch(
   async () => {
     await loadGalleryFromConfig()
     restoreInitialScroll()
-    syncGridParallaxFromScroll()
-    if (layout.value.length > 0) {
-      if (parallaxRafId == null) {
-        parallaxRafId = requestAnimationFrame(parallaxTick)
-      }
-    }
   },
 )
-
-watch(lightboxOpen, (open) => {
-  if (open) {
-    scrollDragActive = false
-    clearBodyScrollCursor()
-  }
-})
 
 watch(gridHostRef, (el) => {
   if (el) nextTick(() => bindGridHostResizeObserver())
@@ -1005,6 +854,12 @@ watch(
 )
 
 onBeforeUnmount(() => {
+  gasPedalHeld.value = false
+  stopGasPedalLoop()
+  window.removeEventListener('pointermove', onGasPedalPointerMove, true)
+  window.removeEventListener('pointerup', onGasPedalPointerUp, true)
+  window.removeEventListener('pointercancel', onGasPedalPointerUp, true)
+
   emit('saveScroll', {
     configPath: props.configPath,
     scrollY: window.scrollY,
@@ -1013,24 +868,16 @@ onBeforeUnmount(() => {
   clearMorphCloseFadeTimer()
   clearCaptionFadeBeforeCloseTimer()
   window.removeEventListener('keydown', onLightboxKeydown)
-  detachEdgeScrollListeners()
-  detachGridScrollParallaxListener()
-  detachGridMouseParallaxListener()
   gridHostResizeObserver?.disconnect()
   gridHostResizeObserver = null
-  if (parallaxRafId != null) {
-    cancelAnimationFrame(parallaxRafId)
-    parallaxRafId = null
-  }
 })
 </script>
 
 <template>
+  <GalleryScrollbar :active="galleryScrollbarActive" />
   <div
     ref="viewerRootRef"
     class="viewer-root relative min-h-svh w-full overflow-x-hidden bg-transparent"
-    @mousemove="onParallaxMove"
-    @mouseleave="onParallaxLeave"
   >
     <p
       v-if="loadState === 'loading'"
@@ -1050,15 +897,18 @@ onBeforeUnmount(() => {
       <div
         class="viewer-bg-grid pointer-events-none"
         aria-hidden="true"
-        :style="gridParallaxLayerStyle"
       />
       <div
         class="viewer-bg-depth pointer-events-none"
         aria-hidden="true"
       />
       <div
-        class="viewer-parallax-shell relative z-10 will-change-transform"
-        :style="parallaxLayerStyle"
+        ref="gridShellRef"
+        class="viewer-grid-shell relative z-10"
+        :class="gridShellCursorClass"
+        @pointerdown="onGridShellPointerDownGas"
+        @pointermove="onGridShellPointerMoveCursor"
+        @pointerleave="onGridShellPointerLeaveCursor"
       >
       <div ref="gridHostRef" class="w-full px-[10%]">
       <GridLayout
@@ -1098,6 +948,7 @@ onBeforeUnmount(() => {
                 <img
                   :src="item.src"
                   :alt="item.i"
+                  draggable="false"
                   class="viewer-tile-img pointer-events-none h-full w-full object-cover"
                   :class="revealTiles ? 'opacity-100' : 'opacity-0'"
                   :style="{
@@ -1257,20 +1108,19 @@ onBeforeUnmount(() => {
             >
               <button
                 type="button"
-                class="lb-zone-prev h-full w-1/3 cursor-w-resize border-0 bg-transparent p-0"
+                class="lb-zone-prev cursor-left h-full w-1/3 border-0 bg-transparent p-0"
                 aria-label="Vorheriges Bild"
                 @click.stop="prevImage"
               />
               <button
                 type="button"
-                class="lb-zone-close h-full w-1/3 border-0 bg-transparent p-0"
-                :style="{ cursor: LB_CLOSE_CURSOR }"
+                class="lb-zone-close cursor-close h-full w-1/3 border-0 bg-transparent p-0"
                 aria-label="Schließen"
                 @click.stop="closeLightbox"
               />
               <button
                 type="button"
-                class="lb-zone-next h-full w-1/3 cursor-e-resize border-0 bg-transparent p-0"
+                class="lb-zone-next cursor-right h-full w-1/3 border-0 bg-transparent p-0"
                 aria-label="Nächstes Bild"
                 @click.stop="nextImage"
               />
@@ -1284,7 +1134,7 @@ onBeforeUnmount(() => {
 
 <style scoped>
 /*
- * Unendlich wirkendes Raster: riesige Fläche + repeat; Parallax-Translate deckt nie „Rand“ ab.
+ * Unendlich wirkendes Raster: riesige Fläche + repeat.
  * Dezente Linien (niedrige Alpha), 10er-Linien nur etwas kräftiger.
  */
 .viewer-bg-grid {
@@ -1296,7 +1146,6 @@ onBeforeUnmount(() => {
   height: 500vmin;
   margin-left: -250vmin;
   margin-top: -250vmin;
-  will-change: transform;
   background-color: #09090b;
   background-image:
     linear-gradient(
@@ -1329,8 +1178,9 @@ onBeforeUnmount(() => {
 
 /*
  * Waagerechter Schacht: links & rechts hell (Gitter sichtbar), Mitte dunkel (Bildspalte).
+ * Engeres volles Zentrum, weiche lange Verläufe zu den Seiten (mehr Stufen).
  * linear-gradient(to right …): 0 % = links, 100 % = rechts.
- * z-index 1: über Grid (0), unter Thumbnails (.viewer-parallax-shell z-10).
+ * z-index 1: über Grid (0), unter Thumbnails (.viewer-grid-shell z-10).
  */
 .viewer-bg-depth {
   position: fixed;
@@ -1342,10 +1192,16 @@ onBeforeUnmount(() => {
   background: linear-gradient(
     to right,
     transparent 0%,
-    transparent 14%,
-    rgba(0, 0, 0, 0.85) 22%,
-    rgba(0, 0, 0, 0.85) 78%,
-    transparent 86%,
+    transparent 5%,
+    rgba(0, 0, 0, 0.08) 14%,
+    rgba(0, 0, 0, 0.35) 26%,
+    rgba(0, 0, 0, 0.68) 36%,
+    rgba(0, 0, 0, 0.85) 40%,
+    rgba(0, 0, 0, 0.85) 60%,
+    rgba(0, 0, 0, 0.68) 64%,
+    rgba(0, 0, 0, 0.35) 74%,
+    rgba(0, 0, 0, 0.08) 86%,
+    transparent 95%,
     transparent 100%
   );
 }

@@ -1,1 +1,43 @@
 @import 'tailwindcss';
+
+/* Lenis: verhindert starre 100%-Höhe + doppelte Scroll-Achse (siehe Lenis-Doku) */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+/*
+ * Vertikal nicht `hidden`: sonst blockiert Chromium oft den nativen Mitteltasten-Auto-Scroll.
+ * Balken unsichtbar — die eigentliche Scrollbar ist die Custom-Kapsel (Lenis).
+ */
+html.lenis {
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+html.lenis::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+/*
+ * Custom-Cursors (32×32 PNG in public/assets/). Hotspot 16 16.
+ * URLs kommen aus src/cursorVars.js (--cursor-*), BASE_URL-kompatibel.
+ */
+.cursor-up {
+  cursor: var(--cursor-up);
+}
+.cursor-dn {
+  cursor: var(--cursor-dn);
+}
+.cursor-left {
+  cursor: var(--cursor-left);
+}
+.cursor-right {
+  cursor: var(--cursor-right);
+}
+.cursor-close {
+  cursor: var(--cursor-close);
+}
