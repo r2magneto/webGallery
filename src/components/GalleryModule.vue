@@ -175,7 +175,7 @@ let gasPointerId = -1
 let lastGasClientY = 0
 /** Max. Scrollgeschwindigkeit (px/s) am oberen/unteren Bildschirmrand */
 const GAS_MAX_PX_PER_SEC = 2600
-/** Annäherung der Ist-Geschwindigkeit an Soll (1/s, größer = schneller Ansprechen) */
+/** Soll-Geschwindigkeit (px/s) folgt Mausposition; Lenis glättet wie beim Mausrad (kein immediate). */
 const GAS_VEL_LERP_PER_S = 10
 
 function isGasPedalBackgroundTarget(target) {
@@ -209,21 +209,26 @@ function gasPedalFrame(ts) {
   const alpha = 1 - Math.exp(-GAS_VEL_LERP_PER_S * dt)
   gasVelPxPerSec += (desired - gasVelPxPerSec) * alpha
 
-  const limit = lenis.dimensions.limit.y
-  let next = lenis.scroll + gasVelPxPerSec * dt
-  const atTop = next <= 0 && gasVelPxPerSec < 0
-  const atBottom = next >= limit && gasVelPxPerSec > 0
-  if (atTop) {
-    next = 0
+  const limit = lenis.limit
+  const delta = gasVelPxPerSec * dt
+  let newTarget = lenis.targetScroll + delta
+  if (newTarget < 0 && gasVelPxPerSec < 0) {
+    newTarget = 0
     gasVelPxPerSec = 0
-  } else if (atBottom) {
-    next = limit
+  } else if (newTarget > limit && gasVelPxPerSec > 0) {
+    newTarget = limit
     gasVelPxPerSec = 0
   }
 
-  lenis.scrollTo(next, { immediate: true })
+  const { lerp, duration, easing } = lenis.options
+  lenis.scrollTo(newTarget, {
+    programmatic: false,
+    lerp,
+    duration,
+    easing,
+  })
 
-  const coasting = Math.abs(gasVelPxPerSec) > 5
+  const coasting = Math.abs(gasVelPxPerSec) > 1.5
   if (gasPedalHeld.value || coasting) {
     gasRafId = requestAnimationFrame(gasPedalFrame)
   } else {
@@ -251,6 +256,7 @@ function stopGasPedalLoop() {
 function onGasPedalPointerMove(e) {
   if (!gasPedalHeld.value || e.pointerId !== gasPointerId) return
   lastGasClientY = e.clientY
+  updateGridShellBackgroundCursor(e)
 }
 
 function onGasPedalPointerUp(e) {
@@ -265,7 +271,7 @@ function onGasPedalPointerUp(e) {
   window.removeEventListener('pointermove', onGasPedalPointerMove, true)
   window.removeEventListener('pointerup', onGasPedalPointerUp, true)
   window.removeEventListener('pointercancel', onGasPedalPointerUp, true)
-  if (!gasRafId && Math.abs(gasVelPxPerSec) > 5) {
+  if (!gasRafId && Math.abs(gasVelPxPerSec) > 1.5) {
     ensureGasPedalLoop()
   }
 }
@@ -282,6 +288,7 @@ function onGridShellPointerDownGas(e) {
   gasPointerId = e.pointerId
   lastGasClientY = e.clientY
   gasPedalHeld.value = true
+  updateGridShellBackgroundCursor(e)
 
   try {
     if (gridShellRef.value instanceof HTMLElement) {
@@ -298,8 +305,7 @@ function onGridShellPointerDownGas(e) {
   ensureGasPedalLoop()
 }
 
-function onGridShellPointerMoveCursor(e) {
-  if (gasPedalHeld.value) return
+function updateGridShellBackgroundCursor(e) {
   const t = e.target
   if (t instanceof Element && t.closest('.viewer-tile-btn')) {
     gridShellCursorClass.value = ''
@@ -307,6 +313,10 @@ function onGridShellPointerMoveCursor(e) {
   }
   gridShellCursorClass.value =
     e.clientY < window.innerHeight * 0.5 ? 'cursor-up' : 'cursor-dn'
+}
+
+function onGridShellPointerMoveCursor(e) {
+  updateGridShellBackgroundCursor(e)
 }
 
 function onGridShellPointerLeaveCursor() {
@@ -326,7 +336,10 @@ function scrollThumbnailIntoViewCentered(index) {
   if (r.height <= 0 && r.width <= 0) return
   const cy = r.top + r.height / 2
   const target = window.scrollY + cy - window.innerHeight / 2
-  scrollWindowToY(target)
+  scrollWindowToY(target, {
+    duration: 1.35,
+    easing: (t) => 1 - (1 - t) ** 3,
+  })
 }
 
 function fitContain(nw, nh, maxW, maxH) {

@@ -11,8 +11,8 @@ export function initLenisSmoothScroll() {
 
   lenisRef = new Lenis({
     smoothWheel: true,
-    /** etwas „schwereres“, gleichmäßiges Nachziehen */
-    lerp: 0.068,
+    /** niedrigeres lerp = längeres, weicheres Auslaufen nach Wheel (~≈1 s Gefühl) */
+    lerp: 0.038,
     wheelMultiplier: 1,
     touchMultiplier: 1,
     gestureOrientation: 'vertical',
