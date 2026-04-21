@@ -251,7 +251,7 @@ onBeforeUnmount(() => {
 })
 
 function layoutPayload() {
-  return layout.value.map((it) => {
+  const items = layout.value.map((it) => {
     const { x, y, w, h, i, src, caption } = it
     const o = {
       i,
@@ -265,6 +265,19 @@ function layoutPayload() {
     if (c) o.caption = caption.trim()
     return o
   })
+
+  // Leserichtung: primär nach Zeile (y gerundet), sekundär nach Spalte (x)
+  items.sort((a, b) => {
+    const ay = Math.round(Number(a.y) || 0)
+    const by = Math.round(Number(b.y) || 0)
+    if (ay !== by) return ay - by
+    const ax = Number(a.x) || 0
+    const bx = Number(b.x) || 0
+    if (ax !== bx) return ax - bx
+    return String(a.i).localeCompare(String(b.i))
+  })
+
+  return items
 }
 
 function openCaptionEditor(item) {
