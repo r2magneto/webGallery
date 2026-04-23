@@ -88,6 +88,29 @@ function findBoxRange(lineText, labelText) {
   return { start, end }
 }
 
+function findBoxColsFromLabelLine(lineText, labelText) {
+  const labelIdx = lineText.indexOf(labelText)
+  if (labelIdx < 0) return null
+  // Prefer vertical borders on the label line.
+  const leftBorder = Math.max(
+    lineText.lastIndexOf('│', labelIdx),
+    lineText.lastIndexOf('║', labelIdx),
+  )
+  const rightSearchStart = labelIdx + labelText.length
+  const rightCandidates = []
+  const r1 = lineText.indexOf('│', rightSearchStart)
+  if (r1 !== -1) rightCandidates.push(r1)
+  const r2 = lineText.indexOf('║', rightSearchStart)
+  if (r2 !== -1) rightCandidates.push(r2)
+  const rightBorder =
+    rightCandidates.length > 0 ? Math.min(...rightCandidates) : -1
+
+  if (leftBorder !== -1 && rightBorder !== -1 && rightBorder > leftBorder) {
+    return { start: leftBorder, end: rightBorder }
+  }
+  return findBoxRange(lineText, labelText)
+}
+
 function swapSingleToDouble(s) {
   return s
     .replaceAll('┌', '╔')
@@ -164,11 +187,13 @@ function applyActiveBoxSwap(lines) {
   for (const t of targets) {
     const idx = lines.findIndex((ln) => ln.includes(t.label))
     if (idx === -1) continue
-    const r = findBoxRange(lines[idx], t.label)
+    const r = findBoxColsFromLabelLine(lines[idx], t.label)
     if (!r) continue
     ranges.push({ key: t.key, line: idx, start: r.start, end: r.end })
 
-    for (const j of [idx - 1, idx, idx + 1]) {
+    // Buttons are 4 lines high: top border, inner empty line, label line, bottom border.
+    // The label line is `idx`, so cover idx-2..idx+1.
+    for (const j of [idx - 2, idx - 1, idx, idx + 1]) {
       if (j < 0 || j >= out.length) continue
       const original = out[j]
       const mid = original.slice(r.start, r.end + 1)
@@ -405,18 +430,23 @@ onMounted(async () => {
 }
 
 .ansi-header-wrap {
+  width: 100%;
   display: flex;
   justify-content: center;
-  padding: 1.25rem 0.75rem 0.75rem;
+  padding: clamp(10px, 2.2vw, 20px) clamp(8px, 1.6vw, 14px)
+    clamp(8px, 1.4vw, 14px);
   transform: translateZ(0);
 }
 
 .ansi-header-canvas {
   background: transparent;
-  max-width: 100%;
+  width: 100%;
+  max-width: 100vw;
+  display: flex;
+  justify-content: center;
   overflow: hidden;
-  /* Ziel: ~120% Standard, responsiv mit Fensterbreite */
-  --ansi-scale: clamp(1, calc(1.05 + 0.00025 * 100vw), 1.45);
+  /* Ziel: ~120% Standard, reagiert spürbar auf Fensterbreite */
+  --ansi-scale: clamp(1, calc(0.85 + 0.00035 * 100vw), 1.35);
   transform: scale(var(--ansi-scale));
   transform-origin: top center;
 }
@@ -440,12 +470,24 @@ onMounted(async () => {
   white-space: pre;
   font-family: 'Web437 IBM VGA 9x16', 'Web437 IBM VGA 8x14 2x',
     'Web437 IBM VGA 8x14', ui-monospace, monospace;
-  font-size: 16px;
-  line-height: 16px;
-  letter-spacing: 0px;
-  user-select: none;
+  /* reacts to window width */
+  font-size: clamp(11px, 1.7vw, 22px);
+  /* unitless: scales with font-size; slight overlap to hide hairlines */
+  line-height: 0.99;
+  letter-spacing: -0.5px;
   color: #e5e7eb;
   text-shadow: 0 0 10px rgb(250 204 21 / 0.16);
+  background-color: transparent;
+  text-rendering: optimizeLegibility;
+  shape-rendering: crispEdges;
+  -webkit-font-smoothing: subpixel-antialiased;
+  -moz-osx-font-smoothing: auto;
+}
+
+.ansi-pre::selection,
+.ansi-pre *::selection {
+  background-color: #ffd200 !important;
+  color: black !important;
 }
 
 .ansi-seg {
