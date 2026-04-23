@@ -1,11 +1,8 @@
 <script setup>
-import { useId } from 'vue'
+import { computed, onMounted, ref } from 'vue'
+import { VGA_PALETTE, loadHeaderColorConfig } from '../utils/headerColorConfig.js'
 
-/**
- * Retro-Terminal-Header (Vorlage: kein Vollbild-PNG — SVG + CSS).
- * Liegt im normalen Dokumentfluss → scrollt mit der Seite nach oben weg.
- */
-const phosphorFilterId = `site-header-phosphor-${useId().replace(/:/g, '')}`
+const ANSI_URL = `${import.meta.env.BASE_URL || '/'}Header_01_01_BW.utf8ans`
 
 const props = defineProps({
   galleryTab: { type: String, required: true },
@@ -17,175 +14,414 @@ const emit = defineEmits(['select-gallery', 'enter-editor', 'exit-editor'])
 function isActiveNav(tabKey) {
   return !props.isEditMode && props.galleryTab === tabKey
 }
+
+const rawHeaderText = ref('')
+const headerLines = computed(() => buildHeaderLines(rawHeaderText.value))
+const colorCfg = ref(null)
+
+const activeKey = computed(() => (props.isEditMode ? null : props.galleryTab))
+
+const CP437_TABLE = (() => {
+  // 0x00-0x7F: ASCII; 0x80-0xFF: CP437 → Unicode.
+  const hi =
+    'ÇüéâäàåçêëèïîìÄÅÉæÆôöòûùÿÖÜ¢£¥₧ƒáíóúñÑªº¿⌐¬½¼¡«»' +
+    '░▒▓│┤ÁÂÀ©╣║╗╝¢¥┐└┴┬├─┼ãÃ╚╔╩╦╠═╬¤ðÐÊËÈıÍÎÏ┘┌' +
+    '█▄▌▐▀αßΓπΣσµτΦΘΩδ∞φε∩≡±≥≤⌠⌡÷≈°∙·√ⁿ²■ '
+  const t = new Array(256)
+  for (let i = 0; i < 128; i += 1) t[i] = String.fromCharCode(i)
+  for (let i = 0; i < 128; i += 1) t[128 + i] = hi[i] ?? '�'
+  return t
+})()
+
+function decodeCp437(bytes) {
+  let out = ''
+  for (let i = 0; i < bytes.length; i += 1) out += CP437_TABLE[bytes[i]]
+  return out
+}
+
+function decodeBestEffort(bytes) {
+  // Wunsch: UTF-8. Falls die Datei tatsächlich CP437-bytes enthält, würden sonst "�" entstehen.
+  // In dem Fall fällt der Decoder auf CP437 zurück, damit Linien/Blockzeichen korrekt sind.
+  try {
+    const utf = new TextDecoder('utf-8', { fatal: false }).decode(bytes)
+    if (utf.includes('�')) return decodeCp437(bytes)
+    return utf
+  } catch {
+    return decodeCp437(bytes)
+  }
+}
+
+function clsForSeg(seg) {
+  const classes = ['ansi-seg']
+  if (seg.bright) classes.push('ansi-bright')
+  if (seg.hue) classes.push('ansi-hue')
+  return classes.join(' ')
+}
+
+function styleForSeg(seg) {
+  const st = {}
+  if (seg.fgIdx != null) st.color = VGA_PALETTE[seg.fgIdx] ?? undefined
+  if (seg.bgIdx != null) st.backgroundColor = VGA_PALETTE[seg.bgIdx] ?? undefined
+  return st
+}
+
+function findBoxRange(lineText, labelText) {
+  const labelIdx = lineText.indexOf(labelText)
+  if (labelIdx < 0) return null
+  const leftCornerCandidates = ['┌', '╔', '╒', '╓', '╭']
+  const rightCornerCandidates = ['┐', '╗', '╕', '╖', '╮']
+  let start = -1
+  for (const c of leftCornerCandidates) {
+    const s = lineText.lastIndexOf(c, labelIdx)
+    if (s > start) start = s
+  }
+  let end = -1
+  for (const c of rightCornerCandidates) {
+    const e = lineText.indexOf(c, labelIdx)
+    if (e !== -1 && (end === -1 || e < end)) end = e
+  }
+  if (start === -1 || end === -1) {
+    // fallback: highlight a conservative range around the label
+    start = Math.max(0, labelIdx - 3)
+    end = Math.min(lineText.length - 1, labelIdx + labelText.length + 2)
+  }
+  return { start, end }
+}
+
+function swapSingleToDouble(s) {
+  return s
+    .replaceAll('┌', '╔')
+    .replaceAll('┐', '╗')
+    .replaceAll('└', '╚')
+    .replaceAll('┘', '╝')
+    .replaceAll('├', '╠')
+    .replaceAll('┤', '╣')
+    .replaceAll('┬', '╦')
+    .replaceAll('┴', '╩')
+    .replaceAll('┼', '╬')
+    .replaceAll('│', '║')
+    .replaceAll('─', '═')
+}
+
+function swapDoubleToSingle(s) {
+  return s
+    .replaceAll('╔', '┌')
+    .replaceAll('╗', '┐')
+    .replaceAll('╚', '└')
+    .replaceAll('╝', '┘')
+    .replaceAll('╠', '├')
+    .replaceAll('╣', '┤')
+    .replaceAll('╦', '┬')
+    .replaceAll('╩', '┴')
+    .replaceAll('╬', '┼')
+    .replaceAll('║', '│')
+    .replaceAll('═', '─')
+}
+
+const BOX_CHARS = new Set(
+  '┌┐└┘├┤┬┴┼─│╔╗╚╝╠╣╦╩╬═║'.split(''),
+)
+
+function segLineFromCharStyles(chars, styles) {
+  const segs = []
+  let cur = null
+  for (let i = 0; i < chars.length; i += 1) {
+    const st = styles[i] || {}
+    const key = `${st.fgIdx ?? ''}|${st.bgIdx ?? ''}|${st.hue ? 1 : 0}|${
+      st.bright ? 1 : 0
+    }|${st.btnKey || ''}`
+    if (!cur || cur._key !== key) {
+      cur = {
+        _key: key,
+        text: chars[i],
+        fgIdx: st.fgIdx ?? null,
+        bgIdx: st.bgIdx ?? null,
+        hue: Boolean(st.hue),
+        bright: Boolean(st.bright),
+        btnKey: st.btnKey ?? null,
+      }
+      segs.push(cur)
+    } else {
+      cur.text += chars[i]
+    }
+  }
+  for (const s of segs) delete s._key
+  return { segments: segs }
+}
+
+function applyActiveBoxSwap(lines) {
+  const targets = [
+    { key: 'g1', label: 'MOTION CAPTURE' },
+    { key: 'g2', label: '360 VIDEO CAPTURE' },
+    { key: 'list', label: 'REFERENCES / ABOUT' },
+  ]
+  const aKey = activeKey.value
+  if (!aKey) return { lines, activeRanges: [] }
+
+  const out = [...lines]
+  const ranges = []
+
+  for (const t of targets) {
+    const idx = lines.findIndex((ln) => ln.includes(t.label))
+    if (idx === -1) continue
+    const r = findBoxRange(lines[idx], t.label)
+    if (!r) continue
+    ranges.push({ key: t.key, line: idx, start: r.start, end: r.end })
+
+    for (const j of [idx - 1, idx, idx + 1]) {
+      if (j < 0 || j >= out.length) continue
+      const original = out[j]
+      const mid = original.slice(r.start, r.end + 1)
+      const swapped = t.key === aKey ? swapSingleToDouble(mid) : swapDoubleToSingle(mid)
+      out[j] = original.slice(0, r.start) + swapped + original.slice(r.end + 1)
+    }
+  }
+
+  const active = ranges.find((x) => x.key === aKey)
+  return active
+    ? { lines: out, activeRanges: [active] }
+    : { lines: out, activeRanges: [] }
+}
+
+function buildHeaderLines(text) {
+  const clean = String(text || '').replace(/\r\n/g, '\n')
+  const baseLines = clean.split('\n')
+  const { lines, activeRanges } = applyActiveBoxSwap(baseLines)
+  const cfg = colorCfg.value
+
+  const out = []
+  for (let li = 0; li < lines.length; li += 1) {
+    const line = lines[li]
+    const chars = [...line]
+    const styles = chars.map(() => ({
+      fgIdx: null,
+      bgIdx: null,
+      hue: false,
+      bright: false,
+      btnKey: null,
+    }))
+
+    const isRedNote =
+      line.includes('PLEASE NOTE') ||
+      line.includes('Working On New Projects') ||
+      line.includes('Do Not Offer') ||
+      line.includes('Serivce') ||
+      (line.includes('ͻ') && line.includes('ͼ'))
+
+    const isWelcome = line.includes('Be Welcome To Browse Impressions Of Earlier Works And Projects')
+    const isMalte = line.includes('MALTE MAAS')
+    const isCaptureStudio = line.includes('CAPTURE STUDIO')
+
+    const navTargets = [
+      { key: 'g1', label: 'MOTION CAPTURE' },
+      { key: 'g2', label: '360 VIDEO CAPTURE' },
+      { key: 'list', label: 'REFERENCES / ABOUT' },
+    ]
+
+    // Default look: dim gray for visible glyphs (monochrome, should NOT hue-cycle)
+    for (let i = 0; i < chars.length; i += 1) {
+      if (chars[i] !== ' ' && styles[i].fgIdx == null) styles[i].fgIdx = 8
+    }
+
+    // Base colors: approximate from Header_01_01.png
+    if (isRedNote) {
+      for (let i = 0; i < chars.length; i += 1) {
+        styles[i].fgIdx = 12
+        styles[i].hue = Boolean(cfg?.cycle?.[12])
+        styles[i].bright = true
+      }
+    } else if (isWelcome) {
+      for (let i = 0; i < chars.length; i += 1) {
+        styles[i].bgIdx = 5
+        styles[i].fgIdx = 0 // black text
+        styles[i].hue = Boolean(cfg?.cycle?.[5])
+      }
+      // small yellow “caps” like in the PNG
+      for (const i of [0, 1, chars.length - 2, chars.length - 1]) {
+        if (i >= 0 && i < chars.length && chars[i] === ' ') {
+          styles[i].fgIdx = 14
+          styles[i].hue = Boolean(cfg?.cycle?.[14])
+        }
+      }
+    } else if (isMalte) {
+      const start = line.indexOf('MALTE MAAS')
+      if (start >= 0) {
+        for (let i = start; i < start + 'MALTE MAAS'.length; i += 1) {
+          styles[i].fgIdx = 13
+          styles[i].hue = Boolean(cfg?.cycle?.[13])
+          styles[i].bright = true
+          styles[i].btnKey = '__enter_editor__'
+        }
+      }
+    } else if (isCaptureStudio) {
+      // yellow frame-ish + white text in the middle
+      for (let i = 0; i < chars.length; i += 1) {
+        if (BOX_CHARS.has(chars[i])) {
+          styles[i].fgIdx = 14
+          styles[i].hue = Boolean(cfg?.cycle?.[14])
+          styles[i].bright = true
+        }
+      }
+      const start = line.indexOf('CAPTURE STUDIO')
+      if (start >= 0) {
+        for (let i = start; i < start + 'CAPTURE STUDIO'.length; i += 1) {
+          styles[i].fgIdx = 15
+          styles[i].bright = true
+        }
+      }
+    }
+
+    // Navigation boxes: border yellow, labels magenta (clickable)
+    for (const nt of navTargets) {
+      const idx = line.indexOf(nt.label)
+      if (idx >= 0) {
+        const range = findBoxRange(line, nt.label)
+        if (range) {
+          for (let i = range.start; i <= range.end; i += 1) {
+            if (BOX_CHARS.has(chars[i]) || chars[i] === ' ') {
+              styles[i].fgIdx = 14
+              styles[i].hue = Boolean(cfg?.cycle?.[14])
+              styles[i].bright = true
+            }
+          }
+          for (let i = idx; i < idx + nt.label.length; i += 1) {
+            const isActive = activeKey.value === nt.key
+            styles[i].fgIdx = isActive ? 15 : 13
+            styles[i].hue = isActive ? false : Boolean(cfg?.cycle?.[13])
+            styles[i].bright = true
+            styles[i].btnKey = nt.key
+          }
+          // extra glow for active tab content (after swap)
+          if (activeKey.value === nt.key) {
+            for (let i = range.start; i <= range.end; i += 1) {
+              styles[i].bright = true
+            }
+          }
+        }
+      }
+    }
+
+    // Logo + lila Zierlinien (approx, closer to PNG):
+    // - Gelb: zentraler Schriftzug-Blockbereich
+    // - Lila: horizontale Bars + seitliche "Frames"
+    if (li >= 1 && li <= 14 && !isRedNote && !isWelcome) {
+      for (let i = 0; i < chars.length; i += 1) {
+        const c = chars[i]
+        const isBlock = '█▓▒░▀▄▌▐■'.includes(c) || c === '�'
+        const inLogoBand = i >= 22 && i <= 72
+        const inSideBars = (i >= 5 && i <= 18) || (i >= 76 && i <= 95)
+
+        if (isBlock && inLogoBand) {
+          styles[i].fgIdx = 14
+          styles[i].hue = Boolean(cfg?.cycle?.[14])
+          styles[i].bright = true
+        }
+
+        // Purple accent lines/bars (use magenta fg) – mainly outside logo band.
+        if ((c === '─' || c === '═') || (isBlock && inSideBars && li >= 3 && li <= 12)) {
+          styles[i].fgIdx = 13
+          styles[i].hue = Boolean(cfg?.cycle?.[13])
+          styles[i].bright = true
+        }
+      }
+    }
+
+    // Apply user-painted overrides (per cell).
+    if (cfg?.cells?.[li]) {
+      const row = cfg.cells[li]
+      for (let i = 0; i < chars.length && i < row.length; i += 1) {
+        const cell = row[i]
+        if (!cell) continue
+        if (cell.fg != null) {
+          styles[i].fgIdx = cell.fg
+          styles[i].hue = Boolean(cfg.cycle?.[cell.fg])
+        }
+        if (cell.bg != null) {
+          styles[i].bgIdx = cell.bg
+          // hue stays true if either fg or bg participates
+          styles[i].hue = styles[i].hue || Boolean(cfg.cycle?.[cell.bg])
+        }
+      }
+    }
+
+    // Apply active range extra glow (if we have it)
+    for (const ar of activeRanges) {
+      if (ar.line !== li) continue
+      for (let i = ar.start; i <= ar.end && i < styles.length; i += 1) {
+        styles[i].bright = true
+      }
+    }
+
+    out.push(segLineFromCharStyles(chars, styles))
+  }
+  return out
+}
+
+onMounted(async () => {
+  try {
+    colorCfg.value = loadHeaderColorConfig()
+    window.addEventListener('storage', () => {
+      colorCfg.value = loadHeaderColorConfig()
+    })
+    const res = await fetch(ANSI_URL)
+    const buf = await res.arrayBuffer()
+    const bytes = new Uint8Array(buf)
+    rawHeaderText.value = decodeBestEffort(bytes)
+  } catch {
+    rawHeaderText.value = 'HEADER LOAD FAILED'
+  }
+})
 </script>
 
 <template>
-  <header class="site-header" aria-label="Seitenkopf">
-    <div class="site-header__scanlines" aria-hidden="true" />
-
-    <div class="site-header__inner">
-      <div class="site-header__logo-wrap">
-        <svg
-          class="site-header__logo-svg"
-          viewBox="0 0 440 88"
-          xmlns="http://www.w3.org/2000/svg"
-          aria-label="HUMANOID capture studio"
-        >
-          <defs>
-            <filter
-              :id="phosphorFilterId"
-              x="-20%"
-              y="-20%"
-              width="140%"
-              height="140%"
-            >
-              <feGaussianBlur stdDeviation="0.8" result="b" />
-              <feMerge>
-                <feMergeNode in="b" />
-                <feMergeNode in="SourceGraphic" />
-              </feMerge>
-            </filter>
-          </defs>
-          <rect
-            x="2"
-            y="2"
-            width="436"
-            height="84"
-            fill="none"
-            stroke="#c4c4cc"
-            stroke-width="1"
-          />
-          <rect
-            x="6"
-            y="6"
-            width="428"
-            height="76"
-            fill="none"
-            stroke="#a1a1aa"
-            stroke-width="1"
-            stroke-dasharray="48 10 120 10 200 10"
-          />
-          <text
-            x="220"
-            y="48"
-            text-anchor="middle"
-            fill="#f59e0b"
-            font-family="IBM Plex Mono, ui-monospace, monospace"
-            font-size="34"
-            font-weight="700"
-            letter-spacing="0.12em"
-            :filter="`url(#${phosphorFilterId})`"
-          >
-            HUMANOID
-          </text>
-          <text
-            x="220"
-            y="74"
-            text-anchor="middle"
-            fill="#f59e0b"
-            font-family="IBM Plex Mono, ui-monospace, monospace"
-            font-size="11"
-            font-weight="500"
-            letter-spacing="0.28em"
-            opacity="0.92"
-          >
-            capture studio
-          </text>
-        </svg>
-      </div>
-
-      <p class="site-header__attention">
-        <span class="site-header__attention-line"
-          >ATTENTION: WE ARE WORKING ON PERSONAL PROJECTS</span
-        >
-        <span class="site-header__attention-line"
-          >CAPTURE AND ANIMATION SERVICE IS NOT AVAILABLE ATM</span
-        >
-      </p>
-
-      <div class="site-header__row">
-        <nav class="site-header__nav" aria-label="Hauptnavigation">
-          <button
-            type="button"
-            class="site-header__nav-btn"
-            :class="
-              isActiveNav('g1')
-                ? 'site-header__nav-btn--active'
-                : 'site-header__nav-btn--idle'
-            "
-            @click="emit('select-gallery', 'g1')"
-          >
-            motioncapture
-          </button>
-          <button
-            type="button"
-            class="site-header__nav-btn"
-            :class="
-              isActiveNav('g2')
-                ? 'site-header__nav-btn--active'
-                : 'site-header__nav-btn--idle'
-            "
-            @click="emit('select-gallery', 'g2')"
-          >
-            360 video capture
-          </button>
-          <button
-            type="button"
-            class="site-header__nav-btn"
-            :class="
-              isActiveNav('list')
-                ? 'site-header__nav-btn--active'
-                : 'site-header__nav-btn--idle'
-            "
-            @click="emit('select-gallery', 'list')"
-          >
-            about / references
-          </button>
-        </nav>
-
-        <nav class="site-header__tools" aria-label="Editor">
-          <button
-            type="button"
-            class="site-header__tool-btn"
-            :class="!isEditMode ? 'site-header__tool-btn--on' : ''"
-            @click="emit('exit-editor')"
-          >
-            Vorschau
-          </button>
-          <span class="site-header__tool-sep" aria-hidden="true">|</span>
-          <button
-            type="button"
-            class="site-header__tool-btn"
-            :class="isEditMode ? 'site-header__tool-btn--on' : ''"
-            @click="!isEditMode && emit('enter-editor')"
-          >
-            Editor
-          </button>
-        </nav>
+  <header class="ansi-header-root" aria-label="Seitenkopf">
+    <div class="ansi-header-scanlines" aria-hidden="true" />
+    <div class="ansi-header-wrap">
+      <div class="ansi-header-canvas">
+        <pre class="ansi-pre" aria-label="Navigation (ANSI)">
+<template v-for="(ln, li) in headerLines" :key="li"><span
+  v-for="(seg, si) in ln.segments"
+  :key="`${li}-${si}`"
+  :class="clsForSeg(seg)"
+  :style="styleForSeg(seg)"
+><button
+  v-if="seg.btnKey"
+  type="button"
+  class="ansi-btn"
+  :class="seg.btnKey !== '__enter_editor__' && isActiveNav(seg.btnKey) ? 'ansi-btn--active' : ''"
+  @click="seg.btnKey === '__enter_editor__' ? emit('enter-editor') : emit('select-gallery', seg.btnKey)"
+>{{ seg.text }}</button><template v-else>{{ seg.text }}</template></span><span class="ansi-nl">
+</span></template>
+        </pre>
       </div>
     </div>
   </header>
 </template>
 
 <style scoped>
-.site-header {
+.ansi-header-root {
   position: relative;
-  z-index: 30;
+  z-index: 40;
+}
+
+.ansi-header-wrap {
+  display: flex;
+  justify-content: center;
+  padding: 1.25rem 0.75rem 0.75rem;
+  transform: translateZ(0);
+}
+
+.ansi-header-canvas {
   background: transparent;
-  pointer-events: none;
+  max-width: 100%;
+  overflow: hidden;
+  /* Ziel: ~120% Standard, responsiv mit Fensterbreite */
+  --ansi-scale: clamp(1, calc(1.05 + 0.00025 * 100vw), 1.45);
+  transform: scale(var(--ansi-scale));
+  transform-origin: top center;
 }
 
-.site-header__inner {
-  pointer-events: auto;
-  max-width: 56rem;
-  margin: 0 auto;
-  padding: 2.25rem 1.25rem 2rem;
-  text-align: center;
-  position: relative;
-  z-index: 2;
-}
-
-.site-header__scanlines {
+.ansi-header-scanlines {
   position: absolute;
   inset: 0;
   pointer-events: none;
@@ -196,150 +432,88 @@ function isActiveNav(tabKey) {
     rgb(0 0 0 / 0.12) 2px,
     rgb(0 0 0 / 0.12) 3px
   );
-  opacity: 0.35;
-  z-index: 1;
+  opacity: 0.32;
 }
 
-.site-header__logo-wrap {
-  position: relative;
-  display: flex;
-  justify-content: center;
-  margin-bottom: 1.75rem;
-}
-
-.site-header__logo-wrap::before {
-  content: '';
-  position: absolute;
-  left: 50%;
-  top: 0;
-  transform: translateX(-50%);
-  width: min(100%, 36rem);
-  height: 12rem;
-  opacity: 0.06;
-  background-image:
-    linear-gradient(90deg, #fff 1px, transparent 1px),
-    linear-gradient(0deg, #fff 1px, transparent 1px);
-  background-size: 24px 24px;
-  pointer-events: none;
-  z-index: -1;
-}
-
-.site-header__logo-svg {
-  width: min(100%, 28rem);
-  height: auto;
-  display: block;
-  filter: drop-shadow(0 0 12px rgb(245 158 11 / 0.25));
-}
-
-.site-header__attention {
-  margin: 0 0 2rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-  font-family: IBM Plex Mono, ui-monospace, monospace;
-  font-size: 0.65rem;
-  font-weight: 600;
-  letter-spacing: 0.14em;
-  line-height: 1.45;
-  color: #f59e0b;
-  text-transform: uppercase;
-  text-shadow:
-    0 0 8px rgb(245 158 11 / 0.35),
-    0 0 1px rgb(245 158 11 / 0.8);
-}
-
-@media (min-width: 640px) {
-  .site-header__attention {
-    font-size: 0.7rem;
-  }
-}
-
-.site-header__row {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1.25rem;
-}
-
-@media (min-width: 768px) {
-  .site-header__row {
-    flex-direction: row;
-    justify-content: center;
-    align-items: flex-start;
-    gap: 2rem;
-  }
-}
-
-.site-header__nav {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 0.65rem 0.75rem;
-}
-
-.site-header__nav-btn {
-  font-family: IBM Plex Mono, ui-monospace, monospace;
-  font-size: 0.7rem;
-  letter-spacing: 0.06em;
-  text-transform: lowercase;
-  padding: 0.55rem 1rem 0.5rem;
-  min-width: 8.5rem;
-  cursor: pointer;
-  background: transparent;
-  transition:
-    color 0.2s ease,
-    border-color 0.2s ease,
-    box-shadow 0.2s ease;
-}
-
-.site-header__nav-btn--idle {
-  color: #71717a;
-  border: 1px solid #52525b;
-  box-shadow: none;
-}
-
-.site-header__nav-btn--idle:hover {
-  color: #a1a1aa;
-  border-color: #71717a;
-}
-
-.site-header__nav-btn--active {
-  color: #f59e0b;
-  border: 1px solid #e4e4e7;
-  box-shadow:
-    inset 0 0 0 1px #f59e0b,
-    0 0 14px rgb(245 158 11 / 0.2);
-  text-shadow: 0 0 10px rgb(245 158 11 / 0.45);
-}
-
-.site-header__tools {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-family: IBM Plex Mono, ui-monospace, monospace;
-  font-size: 0.65rem;
-}
-
-.site-header__tool-btn {
-  padding: 0.25rem 0.5rem;
-  color: #71717a;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  letter-spacing: 0.08em;
-}
-
-.site-header__tool-btn:hover {
-  color: #a1a1aa;
-}
-
-.site-header__tool-btn--on {
-  color: #f59e0b;
-  text-shadow: 0 0 8px rgb(245 158 11 / 0.35);
-}
-
-.site-header__tool-sep {
-  color: #3f3f46;
+.ansi-pre {
+  margin: 0;
+  white-space: pre;
+  font-family: 'Web437 IBM VGA 9x16', 'Web437 IBM VGA 8x14 2x',
+    'Web437 IBM VGA 8x14', ui-monospace, monospace;
+  font-size: 16px;
+  line-height: 16px;
+  letter-spacing: 0px;
   user-select: none;
+  color: #e5e7eb;
+  text-shadow: 0 0 10px rgb(250 204 21 / 0.16);
+}
+
+.ansi-seg {
+  display: inline;
+}
+
+.ansi-nl {
+  display: block;
+  height: 0;
+}
+
+.ansi-fg-yellow {
+  color: #facc15;
+  text-shadow:
+    0 0 12px rgb(250 204 21 / 0.22),
+    0 0 1px rgb(250 204 21 / 0.75);
+}
+
+.ansi-fg-white {
+  color: #ffffff;
+  text-shadow: 0 0 10px rgb(255 255 255 / 0.16);
+}
+
+.ansi-fg-magenta {
+  color: #ff00ff;
+  text-shadow: 0 0 14px rgb(255 0 255 / 0.18);
+}
+
+.ansi-fg-red {
+  color: #ff2a2a;
+  text-shadow: 0 0 12px rgb(255 42 42 / 0.22);
+}
+
+.ansi-fg-dim {
+  color: #6b7280;
+  text-shadow: none;
+}
+
+.ansi-bg-magenta {
+  background: #8b00ff;
+}
+
+.ansi-bg-black {
+  background: #000;
+}
+
+.ansi-bright {
+  filter: brightness(1.08);
+}
+
+.ansi-hue {
+  display: inline;
+  animation: hueCycle 20s linear infinite;
+  will-change: filter;
+}
+
+.ansi-btn {
+  all: unset;
+  display: inline;
+  cursor: pointer;
+}
+
+.ansi-btn:focus-visible {
+  outline: 2px solid rgb(250 204 21 / 0.85);
+  outline-offset: 2px;
+}
+
+.ansi-btn--active {
+  filter: brightness(1.22) saturate(1.1);
 }
 </style>

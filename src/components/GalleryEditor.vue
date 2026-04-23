@@ -9,6 +9,7 @@ import {
   onBeforeUnmount,
 } from 'vue'
 import { GridLayout, GridItem } from 'vue-grid-layout-v3'
+import HeaderColorEditor from './HeaderColorEditor.vue'
 import {
   downloadStaticLayoutJson,
   fetchGalleryLayoutItems,
@@ -38,6 +39,8 @@ const props = defineProps({
 
 /** Standard-Spaltenbreite für neu gescannte Bilder */
 const DEFAULT_SCAN_IMPORT_W = 12
+
+const editorTab = ref('layout') // 'layout' | 'header'
 
 /** Wird aus public/<configPath> geladen. */
 const layout = ref([])
@@ -583,23 +586,43 @@ async function onResetAspect(item) {
     <header
       class="sticky top-0 z-30 flex flex-wrap items-center gap-3 border-b border-white/10 bg-slate-900/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-slate-900/80"
     >
+      <nav class="flex items-center gap-2">
+        <button
+          type="button"
+          class="rounded-md px-3 py-1.5 text-xs font-semibold tracking-wide ring-1 ring-white/15"
+          :class="editorTab === 'layout' ? 'bg-emerald-600 text-white ring-emerald-400/40' : 'bg-slate-800/40 text-slate-200 hover:bg-slate-700/40'"
+          @click="editorTab = 'layout'"
+        >
+          Layout
+        </button>
+        <button
+          type="button"
+          class="rounded-md px-3 py-1.5 text-xs font-semibold tracking-wide ring-1 ring-white/15"
+          :class="editorTab === 'header' ? 'bg-emerald-600 text-white ring-emerald-400/40' : 'bg-slate-800/40 text-slate-200 hover:bg-slate-700/40'"
+          @click="editorTab = 'header'"
+        >
+          Header
+        </button>
+      </nav>
       <span class="text-xs text-zinc-500" title="Öffentliche Layout-Datei (public/)">
         {{ configPath }}
       </span>
-      <button
-        type="button"
-        class="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white shadow hover:bg-emerald-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
-        @click="saveLayout"
-      >
-        Speichern
-      </button>
-      <button
-        type="button"
-        class="rounded-lg border border-white/20 bg-slate-800 px-4 py-2 text-sm font-medium text-slate-100 hover:bg-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
-        @click="scanFolder"
-      >
-        Manifest einlesen
-      </button>
+      <template v-if="editorTab === 'layout'">
+        <button
+          type="button"
+          class="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white shadow hover:bg-emerald-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+          @click="saveLayout"
+        >
+          Speichern
+        </button>
+        <button
+          type="button"
+          class="rounded-lg border border-white/20 bg-slate-800 px-4 py-2 text-sm font-medium text-slate-100 hover:bg-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+          @click="scanFolder"
+        >
+          Manifest einlesen
+        </button>
+      </template>
       <p
         v-if="saveStatus"
         class="text-sm text-emerald-400"
@@ -610,6 +633,8 @@ async function onResetAspect(item) {
     </header>
 
     <main class="flex-1 p-4">
+      <HeaderColorEditor v-if="editorTab === 'header'" />
+      <template v-else>
       <div
         ref="gridHostRef"
         class="w-full px-[10%]"
@@ -717,6 +742,7 @@ async function onResetAspect(item) {
       </GridLayout>
         </div>
       </div>
+      </template>
     </main>
 
     <Teleport to="body">

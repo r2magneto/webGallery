@@ -1,5 +1,23 @@
 @import 'tailwindcss';
 
+@font-face {
+  font-family: 'Web437 IBM VGA 8x14';
+  src: url('/webGallery/fonts/Web437_IBM_VGA_8x14.woff') format('woff');
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Web437 IBM VGA 8x14 2x';
+  src: url('/webGallery/fonts/Web437_IBM_VGA_8x14-2x.woff') format('woff');
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Web437 IBM VGA 9x16';
+  src: url('/webGallery/fonts/Web437_IBM_VGA_9x16.woff') format('woff');
+  font-display: swap;
+}
+
 /* Lenis: verhindert starre 100%-Höhe + doppelte Scroll-Achse (siehe Lenis-Doku) */
 html.lenis,
 html.lenis body {
@@ -40,4 +58,13 @@ html.lenis::-webkit-scrollbar {
 }
 .cursor-close {
   cursor: var(--cursor-close);
+}
+
+@keyframes hueCycle {
+  from {
+    filter: hue-rotate(0deg);
+  }
+  to {
+    filter: hue-rotate(360deg);
+  }
 }
