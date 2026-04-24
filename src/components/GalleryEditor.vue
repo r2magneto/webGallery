@@ -76,6 +76,12 @@ const dragStartPositions = ref(null)
 /** Welches Item die Library gerade zieht (nur für Gruppenzug relevant) */
 const groupDragLeaderId = ref(null)
 
+/** Während Drag: Layout erst bei Drop übernehmen (kein Live-Reflow der anderen Tiles) */
+const isGridDragging = ref(false)
+let pendingGridLayoutCommit = null
+const gridLayoutMirror = ref([])
+const groupDragLast = ref(null)
+
 let gridEmitterUnsubscribe = null
 
 /** Alt oder Strg: Seitenverhältnis beim Resize nicht erzwingen */
@@ -116,23 +122,152 @@ async function loadLayoutFromServer() {
     selected: false,
     src: resolveGalleryImageSrc(it.src, props.configPath),
   }))
+  syncGridLayoutMirror()
+}
+
+function filenameFromSrc(src) {
+  if (!src) return ''
+  const s = String(src)
+  const withoutQuery = s.split('?')[0]
+  const parts = withoutQuery.split('/').filter(Boolean)
+  return parts.length ? parts[parts.length - 1] : ''
+}
+
+async function syncFolderToLayout() {
+  saveStatus.value = ''
+  const filenames = await fetchManifestFilenames(props.configPath)
+  const manifestSet = new Set(filenames)
+
+  // 1) Entfernte Dateien aus Layout entfernen
+  const before = layout.value.length
+  layout.value = layout.value.filter((it) => {
+    const file = filenameFromSrc(it.src)
+    return file && manifestSet.has(file)
+  })
+  const removedCount = before - layout.value.length
+
+  // 2) Neue Dateien ans Ende anhängen (wie bisher Scan)
+  const existingSrc = new Set(layout.value.map((it) => it.src))
+  const usedIds = new Set(layout.value.map((it) => it.i))
+  const makeId = (filename) => {
+    const dot = filename.lastIndexOf('.')
+    let base = dot > 0 ? filename.slice(0, dot) : filename
+    if (!usedIds.has(base)) {
+      usedIds.add(base)
+      return base
+    }
+    let n = 1
+    let id = `${base}-${n}`
+    while (usedIds.has(id)) {
+      n += 1
+      id = `${base}-${n}`
+    }
+    usedIds.add(id)
+    return id
+  }
+
+  await nextTick()
+  let cw = getContainerWidth()
+  if (cw <= 0) {
+    await new Promise((r) => requestAnimationFrame(() => r()))
+    cw = getContainerWidth()
+  }
+  if (cw <= 0) cw = 960
+
+  let appendRowY =
+    layout.value.length === 0 ? 0 : Math.max(...layout.value.map((it) => it.y + it.h))
+
+  const added = []
+  for (const name of filenames) {
+    const src = `${imagesBasePathForLayoutConfig(props.configPath)}${name}`
+    if (existingSrc.has(src)) continue
+    const id = makeId(name)
+    const { naturalWidth: nw, naturalHeight: nh } = await probeImageNatural(src)
+    imageMetaById[id] = { naturalWidth: nw, naturalHeight: nh }
+    const w = Math.max(1, Math.round(Math.min(DEFAULT_SCAN_IMPORT_W, GRID_COL_NUM)))
+    const rh = squareRowHeightPx(cw)
+    const h = Math.max(1, Math.round(fitHeightForWidth(w, cw, nw, nh, rh)))
+    layout.value.push({
+      i: id,
+      x: 0,
+      y: appendRowY,
+      w,
+      h,
+      src,
+      selected: false,
+    })
+    appendRowY += h
+    existingSrc.add(src)
+    added.push(name)
+  }
+
+  if (added.length === 0 && removedCount === 0) {
+    saveStatus.value = 'Keine Änderungen – Layout ist bereits synchron.'
+  } else {
+    const parts = []
+    if (added.length) parts.push(`${added.length} hinzugefügt`)
+    if (removedCount) parts.push(`${removedCount} entfernt`)
+    saveStatus.value = `Synchronisiert: ${parts.join(', ')}.`
+  }
+  clearTimeout(saveStatusTimer)
+  saveStatusTimer = setTimeout(() => {
+    saveStatus.value = ''
+  }, 3500)
+
+  syncGridLayoutMirror()
+}
+
+function mergeIncomingGridLayout(incoming) {
+  const byId = new Map((incoming || []).map((it) => [it.i, it]))
+  const used = new Set()
+
+  const merged = layout.value.map((cur) => {
+    const nextPos = byId.get(cur.i)
+    if (!nextPos) return cur
+    used.add(cur.i)
+    return { ...cur, ...nextPos }
+  })
+
+  for (const it of incoming || []) {
+    if (used.has(it.i)) continue
+    merged.push({ ...it })
+  }
+
+  return merged
+}
+
+function syncGridLayoutMirror() {
+  if (isGridDragging.value) return
+  gridLayoutMirror.value = layout.value.map((it) => ({ ...it }))
+}
+
+function onGridLayoutUpdate(nextLayout) {
+  if (isGridDragging.value) {
+    pendingGridLayoutCommit = nextLayout
+    return
+  }
+  layout.value = mergeIncomingGridLayout(nextLayout)
+  gridLayoutMirror.value = layout.value.map((it) => ({ ...it }))
 }
 
 /** vue-grid-layout-v3 feuert kein @drag nach außen; dragEvent (dragstart/dragmove/dragend) kommt über den Layout-Emitter. */
 function onGridDragEvent(payload) {
   const [eventName, id, gx, gy] = payload || []
   if (eventName === 'dragstart') {
+    isGridDragging.value = true
     const arr = layout.value
     const leader = arr.find((it) => it.i === id)
     if (!leader?.selected) {
       dragStartPositions.value = null
       groupDragLeaderId.value = null
+      groupDragLast.value = null
       return
     }
     const selected = arr.filter((it) => it.selected)
     if (selected.length < 2) {
       dragStartPositions.value = null
       groupDragLeaderId.value = null
+      groupDragLast.value = null
       return
     }
     const starts = {}
@@ -142,39 +277,60 @@ function onGridDragEvent(payload) {
     }
     dragStartPositions.value = starts
     groupDragLeaderId.value = id
+    groupDragLast.value = { id, gx, gy }
     return
   }
 
   if (eventName === 'dragend') {
+    isGridDragging.value = false
+    if (pendingGridLayoutCommit) {
+      layout.value = mergeIncomingGridLayout(pendingGridLayoutCommit)
+      pendingGridLayoutCommit = null
+    }
+
+    // Gruppen-Drag: "Mitläufer" erst beim Drop versetzen (keine Live-Updates).
+    if (
+      dragStartPositions.value &&
+      groupDragLeaderId.value &&
+      groupDragLast.value?.id === groupDragLeaderId.value
+    ) {
+      const starts = dragStartPositions.value
+      const leaderId = groupDragLeaderId.value
+      const leaderStart = starts[leaderId]
+      const last = groupDragLast.value
+      if (leaderStart && last) {
+        const dx = last.gx - leaderStart.x
+        const dy = last.gy - leaderStart.y
+        if (dx !== 0 || dy !== 0) {
+          const arr = layout.value
+          for (const itemId of Object.keys(starts)) {
+            if (itemId === leaderId) continue
+            const pos0 = starts[itemId]
+            const idx = arr.findIndex((e) => e.i === itemId)
+            if (idx === -1) continue
+            const cur = arr[idx]
+            let nx = pos0.x + dx
+            let ny = pos0.y + dy
+            nx = Math.max(0, Math.min(nx, GRID_COL_NUM - cur.w))
+            ny = Math.max(0, ny)
+            arr.splice(idx, 1, { ...cur, x: nx, y: ny })
+          }
+        }
+      }
+    }
+
+    syncGridLayoutMirror()
     dragStartPositions.value = null
     groupDragLeaderId.value = null
+    groupDragLast.value = null
     return
   }
 
   if (eventName !== 'dragmove') return
   if (!dragStartPositions.value || groupDragLeaderId.value !== id) return
 
-  const starts = dragStartPositions.value
-  const leaderStart = starts[id]
-  if (!leaderStart) return
-
-  const dx = gx - leaderStart.x
-  const dy = gy - leaderStart.y
-  if (dx === 0 && dy === 0) return
-
-  const arr = layout.value
-  for (const itemId of Object.keys(starts)) {
-    if (itemId === id) continue
-    const pos0 = starts[itemId]
-    const idx = arr.findIndex((e) => e.i === itemId)
-    if (idx === -1) continue
-    const cur = arr[idx]
-    let nx = pos0.x + dx
-    let ny = pos0.y + dy
-    nx = Math.max(0, Math.min(nx, GRID_COL_NUM - cur.w))
-    ny = Math.max(0, ny)
-    arr.splice(idx, 1, { ...cur, x: nx, y: ny })
-  }
+  // Keine Live-Verschiebung der "anderen" Tiles; nur merken, wohin der Leader ging.
+  groupDragLast.value = { id, gx, gy }
 }
 
 /** Aspect-Lock beim Resize (internes resizeEvent wie beim Drag über den Layout-Emitter). */
@@ -227,6 +383,7 @@ onMounted(async () => {
   window.addEventListener('blur', clearResizeModifierKeys)
 
   await loadLayoutFromServer()
+  await syncFolderToLayout()
   await nextTick()
   bindGridHostResizeObserver()
   subscribeGridEmitters()
@@ -236,6 +393,7 @@ watch(
   () => props.configPath,
   async () => {
     await loadLayoutFromServer()
+    await syncFolderToLayout()
     await nextTick()
     bindGridHostResizeObserver()
     subscribeGridEmitters()
@@ -337,79 +495,8 @@ function probeImageNatural(src) {
 }
 
 async function scanFolder() {
-  saveStatus.value = ''
   try {
-    const filenames = await fetchManifestFilenames(props.configPath)
-    const existingSrc = new Set(layout.value.map((it) => it.src))
-    const usedIds = new Set(layout.value.map((it) => it.i))
-    const makeId = (filename) => {
-      const dot = filename.lastIndexOf('.')
-      let base = dot > 0 ? filename.slice(0, dot) : filename
-      if (!usedIds.has(base)) {
-        usedIds.add(base)
-        return base
-      }
-      let n = 1
-      let id = `${base}-${n}`
-      while (usedIds.has(id)) {
-        n += 1
-        id = `${base}-${n}`
-      }
-      usedIds.add(id)
-      return id
-    }
-
-    await nextTick()
-    let cw = getContainerWidth()
-    if (cw <= 0) {
-      await new Promise((r) => requestAnimationFrame(() => r()))
-      cw = getContainerWidth()
-    }
-    if (cw <= 0) cw = 960
-
-    /** Unterkante der Galerie in Gitterzeilen (y + h), neue Kacheln nur darunter */
-    let appendRowY =
-      layout.value.length === 0
-        ? 0
-        : Math.max(...layout.value.map((it) => it.y + it.h))
-
-    const added = []
-    for (const name of filenames) {
-      const src = `${imagesBasePathForLayoutConfig(props.configPath)}${name}`
-      if (existingSrc.has(src)) continue
-      const id = makeId(name)
-      const { naturalWidth: nw, naturalHeight: nh } = await probeImageNatural(src)
-      imageMetaById[id] = { naturalWidth: nw, naturalHeight: nh }
-      const w = Math.max(
-        1,
-        Math.round(Math.min(DEFAULT_SCAN_IMPORT_W, GRID_COL_NUM)),
-      )
-      const rh = squareRowHeightPx(cw)
-      const h = Math.max(
-        1,
-        Math.round(fitHeightForWidth(w, cw, nw, nh, rh)),
-      )
-      layout.value.push({
-        i: id,
-        x: 0,
-        y: appendRowY,
-        w,
-        h,
-        src,
-        selected: false,
-      })
-      appendRowY += h
-      existingSrc.add(src)
-      added.push(name)
-    }
-    saveStatus.value =
-      added.length === 0
-        ? 'Keine neuen Bilder.'
-        : `${added.length} Bild(er) hinzugefügt.`
-    clearTimeout(saveStatusTimer)
-    saveStatusTimer = setTimeout(() => {
-      saveStatus.value = ''
-    }, 3500)
+    await syncFolderToLayout()
   } catch (e) {
     alert(e instanceof Error ? e.message : 'Scan fehlgeschlagen.')
   }
@@ -482,12 +569,14 @@ function patchLayoutItem(id, updates) {
   if (idx === -1) return
   const next = { ...arr[idx], ...updates }
   arr.splice(idx, 1, next)
+  syncGridLayoutMirror()
 }
 
 function onLayoutReady() {
   bindGridHostResizeObserver()
   subscribeGridEmitters()
   syncAutoDimensions()
+  syncGridLayoutMirror()
 }
 
 watch(gridHostRef, (el) => {
@@ -498,6 +587,7 @@ watch(
   () => layout.value.length,
   () => {
     syncAutoDimensions()
+    syncGridLayoutMirror()
   },
 )
 
@@ -514,6 +604,7 @@ function clearSelection() {
   layout.value = layout.value.map((it) =>
     it.selected ? { ...it, selected: false } : it,
   )
+  syncGridLayoutMirror()
 }
 
 function onGridSurfaceClick(e) {
@@ -535,6 +626,7 @@ function onItemClick(item, e) {
   if (idx === -1) return
   const cur = layout.value[idx]
   patchLayoutItem(item.i, { selected: !cur.selected })
+  syncGridLayoutMirror()
 }
 
 async function applyResetAspectForId(id) {
@@ -643,7 +735,8 @@ async function onResetAspect(item) {
         <div class="min-h-[min(70vh,800px)]">
         <GridLayout
           ref="gridRef"
-          v-model:layout="layout"
+          :layout="gridLayoutMirror"
+          @update:layout="onGridLayoutUpdate"
           :col-num="48"
           :row-height="gridRowHeight"
           :margin="[10, 10]"
@@ -656,7 +749,7 @@ async function onResetAspect(item) {
           @layout-ready="onLayoutReady"
         >
           <GridItem
-            v-for="item in layout"
+            v-for="item in gridLayoutMirror"
             :key="item.i"
             :x="item.x"
             :y="item.y"

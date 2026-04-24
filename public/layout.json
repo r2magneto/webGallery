@@ -302,6 +302,14 @@
       "src": "/webGallery/images/gallery1/m_DSC04949.webp"
     },
     {
+      "i": "m_Screenshot 2026-03-13 14.02.07_up2",
+      "x": 0,
+      "y": 74,
+      "w": 11,
+      "h": 6,
+      "src": "/webGallery/images/gallery1/m_Screenshot 2026-03-13 14.02.07_up2.png"
+    },
+    {
       "i": "m_DSC04950",
       "x": 11,
       "y": 74,
@@ -316,14 +324,6 @@
       "w": 12,
       "h": 6,
       "src": "/webGallery/images/gallery1/m_20180228_111354.webp"
-    },
-    {
-      "i": "m_Screenshot 2022-08-15 14.03.12 - Kopie",
-      "x": 4,
-      "y": 80,
-      "w": 11,
-      "h": 6,
-      "src": "/webGallery/images/gallery1/m_Screenshot 2022-08-15 14.03.12 - Kopie.webp"
     },
     {
       "i": "m_Screenshot 2021-05-12 15.04.18",
@@ -359,12 +359,12 @@
       "src": "/webGallery/images/gallery1/m_Screenshot 2026-03-13 13.58.38.webp"
     },
     {
-      "i": "m_20180503_142845",
-      "x": 11,
-      "y": 86,
-      "w": 4,
-      "h": 7,
-      "src": "/webGallery/images/gallery1/m_20180503_142845.webp"
+      "i": "m_Screenshot 2022-08-15 14.03.12 - Kopie",
+      "x": 4,
+      "y": 85,
+      "w": 11,
+      "h": 6,
+      "src": "/webGallery/images/gallery1/m_Screenshot 2022-08-15 14.03.12 - Kopie.webp"
     },
     {
       "i": "m_DSC03237(1)",
@@ -383,12 +383,12 @@
       "src": "/webGallery/images/gallery1/m_Screenshot 2020-05-05 14.54.38.webp"
     },
     {
-      "i": "m_Screenshot 2022-08-15 13.54.45",
-      "x": 2,
-      "y": 93,
-      "w": 13,
+      "i": "m_20180503_142845",
+      "x": 11,
+      "y": 91,
+      "w": 4,
       "h": 7,
-      "src": "/webGallery/images/gallery1/m_Screenshot 2022-08-15 13.54.45.webp"
+      "src": "/webGallery/images/gallery1/m_20180503_142845.webp"
     },
     {
       "i": "m_Screenshot 2020-11-16 13.26.42",
@@ -423,12 +423,12 @@
       "src": "/webGallery/images/gallery1/m_20230921_204454.webp"
     },
     {
-      "i": "m_Screenshot 2026-03-13 12.21.47",
-      "x": 7,
-      "y": 100,
+      "i": "m_Screenshot 2022-08-15 13.54.45",
+      "x": 2,
+      "y": 98,
       "w": 13,
-      "h": 5,
-      "src": "/webGallery/images/gallery1/m_Screenshot 2026-03-13 12.21.47.webp"
+      "h": 7,
+      "src": "/webGallery/images/gallery1/m_Screenshot 2022-08-15 13.54.45.webp"
     },
     {
       "i": "m_20180604_084623",
@@ -439,20 +439,12 @@
       "src": "/webGallery/images/gallery1/m_20180604_084623.webp"
     },
     {
-      "i": "m_20180605_105827",
-      "x": 1,
+      "i": "m_Screenshot 2026-03-13 12.21.47",
+      "x": 7,
       "y": 105,
-      "w": 7,
-      "h": 4,
-      "src": "/webGallery/images/gallery1/m_20180605_105827.webp"
-    },
-    {
-      "i": "m_EntgegenkommendeBahn_f1195_0000_small",
-      "x": 8,
-      "y": 105,
-      "w": 12,
-      "h": 7,
-      "src": "/webGallery/images/gallery1/m_EntgegenkommendeBahn_f1195_0000_small.webp"
+      "w": 13,
+      "h": 5,
+      "src": "/webGallery/images/gallery1/m_Screenshot 2026-03-13 12.21.47.webp"
     },
     {
       "i": "m_20190831_094932",
@@ -471,12 +463,52 @@
       "src": "/webGallery/images/gallery1/m_20181117_142910.webp"
     },
     {
+      "i": "m_20180605_105827",
+      "x": 1,
+      "y": 110,
+      "w": 7,
+      "h": 4,
+      "src": "/webGallery/images/gallery1/m_20180605_105827.webp"
+    },
+    {
+      "i": "m_EntgegenkommendeBahn_f1195_0000_small",
+      "x": 8,
+      "y": 110,
+      "w": 12,
+      "h": 7,
+      "src": "/webGallery/images/gallery1/m_EntgegenkommendeBahn_f1195_0000_small.webp"
+    },
+    {
       "i": "m_Screenshot 2021-03-19 12.18.58",
       "x": 20,
-      "y": 110,
+      "y": 111,
       "w": 14,
       "h": 8,
       "src": "/webGallery/images/gallery1/m_Screenshot 2021-03-19 12.18.58.webp"
+    },
+    {
+      "i": "m_Screenshot 2023-04-05 17.05.27_up2",
+      "x": 0,
+      "y": 117,
+      "w": 12,
+      "h": 7,
+      "src": "/webGallery/images/gallery1/m_Screenshot 2023-04-05 17.05.27_up2.png"
+    },
+    {
+      "i": "m_Screenshot 2026-03-13 12.20.34_upscaled",
+      "x": 12,
+      "y": 119,
+      "w": 12,
+      "h": 7,
+      "src": "/webGallery/images/gallery1/m_Screenshot 2026-03-13 12.20.34_upscaled.png"
+    },
+    {
+      "i": "m_Screenshot 2026-03-16 17.07.02_upscaled",
+      "x": 24,
+      "y": 120,
+      "w": 12,
+      "h": 7,
+      "src": "/webGallery/images/gallery1/m_Screenshot 2026-03-16 17.07.02_upscaled.png"
     }
   ]
 }
