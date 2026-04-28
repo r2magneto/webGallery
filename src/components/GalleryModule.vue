@@ -167,6 +167,35 @@ const gridShellRef = ref(null)
 /** Leer oder globale Cursor-Klasse (.cursor-up / .cursor-dn) für Grid-Hintergrund */
 const gridShellCursorClass = ref('')
 const gasPedalHeld = ref(false)
+let lastCursorClientY = window.innerHeight * 0.5
+let cursorIsOverBackground = false
+let wheelCursorOverrideUntil = 0
+let wheelCursorOverrideTimer = 0
+
+function setWheelCursorOverride(dir) {
+  if (!cursorIsOverBackground) return
+  gridShellCursorClass.value = dir === 'down' ? 'cursor-dn' : 'cursor-up'
+  wheelCursorOverrideUntil = Date.now() + 450
+  if (wheelCursorOverrideTimer) window.clearTimeout(wheelCursorOverrideTimer)
+  wheelCursorOverrideTimer = window.setTimeout(() => {
+    wheelCursorOverrideTimer = 0
+    wheelCursorOverrideUntil = 0
+    // zurück zu Mausposition
+    gridShellCursorClass.value =
+      lastCursorClientY < window.innerHeight * 0.5 ? 'cursor-up' : 'cursor-dn'
+  }, 480)
+}
+
+function onWindowWheelCursorHint(e) {
+  if (lightboxOpen.value) return
+  if (!layout.value.length || loadState.value !== 'idle') return
+  const t = e.target
+  if (!isGasPedalBackgroundTarget(t)) return
+  // deltaY > 0 = nach unten scrollen
+  const dy = Number(e.deltaY) || 0
+  if (dy === 0) return
+  setWheelCursorOverride(dy > 0 ? 'down' : 'up')
+}
 
 let gasVelPxPerSec = 0
 let gasRafId = 0
@@ -309,8 +338,12 @@ function updateGridShellBackgroundCursor(e) {
   const t = e.target
   if (t instanceof Element && t.closest('.viewer-tile-btn')) {
     gridShellCursorClass.value = ''
+    cursorIsOverBackground = false
     return
   }
+  cursorIsOverBackground = isGasPedalBackgroundTarget(t)
+  lastCursorClientY = e.clientY
+  if (Date.now() < wheelCursorOverrideUntil) return
   gridShellCursorClass.value =
     e.clientY < window.innerHeight * 0.5 ? 'cursor-up' : 'cursor-dn'
 }
@@ -820,6 +853,7 @@ onMounted(async () => {
   restoreInitialScroll()
 
   window.addEventListener('keydown', onLightboxKeydown)
+  window.addEventListener('wheel', onWindowWheelCursorHint, { passive: true })
 })
 
 watch(
@@ -872,6 +906,8 @@ onBeforeUnmount(() => {
   window.removeEventListener('pointermove', onGasPedalPointerMove, true)
   window.removeEventListener('pointerup', onGasPedalPointerUp, true)
   window.removeEventListener('pointercancel', onGasPedalPointerUp, true)
+  window.removeEventListener('wheel', onWindowWheelCursorHint)
+  if (wheelCursorOverrideTimer) window.clearTimeout(wheelCursorOverrideTimer)
 
   emit('saveScroll', {
     configPath: props.configPath,
@@ -950,7 +986,7 @@ onBeforeUnmount(() => {
           >
             <button
               type="button"
-              class="viewer-tile-btn group relative z-10 block h-full w-full cursor-zoom-in border-0 bg-transparent p-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400/80"
+              class="viewer-tile-btn cursor-thumb group relative z-10 block h-full w-full border-0 bg-transparent p-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400/80"
               :data-viewer-tile-id="item.i"
               :aria-label="`Vergrößern: ${item.i}`"
               @click="openLightbox(index, $event)"

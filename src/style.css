@@ -59,6 +59,9 @@ html.lenis::-webkit-scrollbar {
 .cursor-close {
   cursor: var(--cursor-close);
 }
+.cursor-thumb {
+  cursor: var(--cursor-thumb);
+}
 
 @keyframes hueCycle {
   from {

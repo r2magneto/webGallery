@@ -111,6 +111,8 @@ app.get('/scan-images', async (req, res) => {
     const files = []
     for (const name of names) {
       if (name.startsWith('.')) continue
+      if (name.toLowerCase() === 'manifest.json') continue
+      if (!name.toLowerCase().endsWith('.webp')) continue
       const full = path.join(scanDir, name)
       const st = await fs.stat(full)
       if (st.isFile()) files.push(name)

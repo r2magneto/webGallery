@@ -45,7 +45,7 @@ function onSelectGallery(tab) {
 }
 
 function enterEditor() {
-  const input = window.prompt('Passwort für den Editor:')
+  const input = window.prompt('Admin Login')
   if (input == null) return
   if (input !== EDITOR_PASSWORD) return
   if (galleryTab.value === 'g2') editorConfigPath.value = CONFIG_G2

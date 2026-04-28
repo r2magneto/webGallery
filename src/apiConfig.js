@@ -13,6 +13,22 @@ function safeLayoutBasename(configFile) {
   return ALLOWED_LAYOUT_BASENAMES.has(name) ? name : 'layout.json'
 }
 
+function apiBaseUrl() {
+  const raw = (import.meta.env?.VITE_API_BASE_URL ?? '').trim()
+  if (!raw) return 'http://localhost:3000'
+  return raw.replace(/\/+$/, '')
+}
+
+async function fetchWithTimeout(url, ms = 1500) {
+  const ctl = new AbortController()
+  const t = setTimeout(() => ctl.abort(), ms)
+  try {
+    return await fetch(url, { signal: ctl.signal })
+  } finally {
+    clearTimeout(t)
+  }
+}
+
 /** Öffentlicher Pfad inkl. Vite-`base` (GitHub Pages: `/webGallery/layout.json`). */
 export function layoutPublicUrl(configFile = 'layout.json') {
   const name = safeLayoutBasename(configFile)
@@ -51,16 +67,26 @@ export async function fetchGalleryLayoutItems(configFile = 'layout.json') {
  * Schema: `{ "filenames": ["a.webp", …] }`. Bei fehlender Datei oder Fehler: [].
  */
 export async function fetchManifestFilenames(configPath) {
-  const base = imagesBasePathForLayoutConfig(configPath)
-  const url = `${base}manifest.json`
-  let res
+  const config = safeLayoutBasename(configPath)
+
+  // Dev/Local: wenn ein Node-Server läuft, direkt den Ordner scannen.
+  // (Auf GitHub Pages gibt es keinen Server → Fallback auf statisches manifest.json.)
   try {
-    res = await fetch(url)
+    const apiUrl = `${apiBaseUrl()}/scan-images?config=${encodeURIComponent(config)}`
+    const res = await fetchWithTimeout(apiUrl, 1500)
+    if (res.ok) {
+      const data = await res.json()
+      if (Array.isArray(data.filenames)) return data.filenames
+    }
   } catch {
-    return []
+    // ignore → fallback
   }
-  if (!res.ok) return []
+
+  const base = imagesBasePathForLayoutConfig(configPath)
+  const url = `${base}manifest.json?v=${Date.now()}`
   try {
+    const res = await fetch(url)
+    if (!res.ok) return []
     const data = await res.json()
     return Array.isArray(data.filenames) ? data.filenames : []
   } catch {

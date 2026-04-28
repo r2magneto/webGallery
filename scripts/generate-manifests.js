@@ -16,6 +16,7 @@ function isSkippable(name) {
   if (!name) return true
   if (name.startsWith('.')) return true
   if (name.toLowerCase() === 'manifest.json') return true
+  if (!name.toLowerCase().endsWith('.webp')) return true
   return false
 }
 

@@ -12,6 +12,7 @@ function injectCustomCursorVars() {
   r.setProperty('--cursor-left', stack('cur_l.png', 'w-resize'))
   r.setProperty('--cursor-right', stack('cur_r.png', 'e-resize'))
   r.setProperty('--cursor-close', stack('cur_x.png', 'pointer'))
+  r.setProperty('--cursor-thumb', stack('cur_v.png', 'pointer'))
 }
 
 injectCustomCursorVars()

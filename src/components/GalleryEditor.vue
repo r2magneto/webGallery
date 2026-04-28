@@ -75,6 +75,10 @@ const imageMetaById = reactive({})
 const dragStartPositions = ref(null)
 /** Welches Item die Library gerade zieht (nur für Gruppenzug relevant) */
 const groupDragLeaderId = ref(null)
+/** Aktives Drag-Item (auch Single-Drag) */
+const activeDragId = ref(null)
+/** Start-Layout (id → {x,y,w,h}) um andere Tiles während Drag einzufrieren */
+const dragFreezeStartLayout = ref(null)
 
 /** Während Drag: Layout erst bei Drop übernehmen (kein Live-Reflow der anderen Tiles) */
 const isGridDragging = ref(false)
@@ -135,7 +139,9 @@ function filenameFromSrc(src) {
 
 async function syncFolderToLayout() {
   saveStatus.value = ''
-  const filenames = await fetchManifestFilenames(props.configPath)
+  const filenames = (await fetchManifestFilenames(props.configPath)).filter((n) =>
+    String(n).toLowerCase().endsWith('.webp'),
+  )
   const manifestSet = new Set(filenames)
 
   // 1) Entfernte Dateien aus Layout entfernen
@@ -244,6 +250,17 @@ function syncGridLayoutMirror() {
 function onGridLayoutUpdate(nextLayout) {
   if (isGridDragging.value) {
     pendingGridLayoutCommit = nextLayout
+    const freeze = dragFreezeStartLayout.value
+    const dragId = activeDragId.value
+    if (freeze && dragId) {
+      const frozen = (nextLayout || []).map((it) => {
+        if (it.i === dragId) return { ...it }
+        const start = freeze[it.i]
+        if (!start) return { ...it }
+        return { ...it, ...start }
+      })
+      gridLayoutMirror.value = mergeIncomingGridLayout(frozen)
+    }
     return
   }
   layout.value = mergeIncomingGridLayout(nextLayout)
@@ -255,6 +272,12 @@ function onGridDragEvent(payload) {
   const [eventName, id, gx, gy] = payload || []
   if (eventName === 'dragstart') {
     isGridDragging.value = true
+    activeDragId.value = id
+    const startsAll = {}
+    for (const it of layout.value) {
+      startsAll[it.i] = { x: it.x, y: it.y, w: it.w, h: it.h }
+    }
+    dragFreezeStartLayout.value = startsAll
     const arr = layout.value
     const leader = arr.find((it) => it.i === id)
     if (!leader?.selected) {
@@ -323,6 +346,8 @@ function onGridDragEvent(payload) {
     dragStartPositions.value = null
     groupDragLeaderId.value = null
     groupDragLast.value = null
+    activeDragId.value = null
+    dragFreezeStartLayout.value = null
     return
   }
 
@@ -442,8 +467,11 @@ function layoutPayload() {
 }
 
 function openCaptionEditor(item) {
-  captionEditingId.value = item.i
-  captionDraft.value = item.caption ? String(item.caption) : ''
+  const id = item?.i
+  if (!id) return
+  captionEditingId.value = id
+  const cur = layout.value.find((it) => it.i === id)
+  captionDraft.value = cur?.caption ? String(cur.caption) : ''
 }
 
 function cancelCaptionEdit() {
@@ -464,6 +492,7 @@ function confirmCaptionEdit() {
   if (has) updated.caption = next
   else delete updated.caption
   arr.splice(idx, 1, updated)
+  syncGridLayoutMirror()
   cancelCaptionEdit()
 }
 
@@ -659,6 +688,7 @@ async function applyResetAspectForId(id) {
   const next = { ...cur, h: newH }
   clampGridDimensions(next)
   arr.splice(idx, 1, next)
+  syncGridLayoutMirror()
 }
 
 async function onResetAspect(item) {
