@@ -1,84 +1,308 @@
 {
   "items": [
     {
-      "i": "3_20151216_165212",
-      "x": 15,
-      "y": 14,
+      "i": "build20160916_084253",
+      "x": 23,
+      "y": 1,
       "w": 12,
-      "h": 7,
-      "src": "/images/gallery2/3_20151216_165212.webp"
+      "h": 10,
+      "src": "/webGallery/images/gallery2/build20160916_084253.webp"
     },
     {
-      "i": "3_Bildschirmfoto+2018-06-26+um+16.20.02",
-      "x": 12,
-      "y": 5,
+      "i": "build20170713_164001",
+      "x": 35,
+      "y": 2,
+      "w": 12,
+      "h": 7,
+      "src": "/webGallery/images/gallery2/build20170713_164001.webp"
+    },
+    {
+      "i": "build3_20151013_124605",
+      "x": 11,
+      "y": 4,
+      "w": 12,
+      "h": 7,
+      "src": "/webGallery/images/gallery2/build3_20151013_124605.webp"
+    },
+    {
+      "i": "amd3_IMG_0229-upscale",
+      "x": 35,
+      "y": 9,
+      "w": 10,
+      "h": 8,
+      "src": "/webGallery/images/gallery2/amd3_IMG_0229-upscale.webp"
+    },
+    {
+      "i": "build3_20151221_105428",
+      "x": 4,
+      "y": 11,
+      "w": 11,
+      "h": 6,
+      "src": "/webGallery/images/gallery2/build3_20151221_105428.webp"
+    },
+    {
+      "i": "build3_20151208_125227",
+      "x": 15,
+      "y": 11,
+      "w": 13,
+      "h": 8,
+      "src": "/webGallery/images/gallery2/build3_20151208_125227.webp"
+    },
+    {
+      "i": "build3_DSC01985",
+      "x": 28,
+      "y": 11,
+      "w": 7,
+      "h": 13,
+      "src": "/webGallery/images/gallery2/build3_DSC01985.webp"
+    },
+    {
+      "i": "cebitC6E8EED9-892A-4D98-86F1-DAD7BBD5E159",
+      "x": 6,
+      "y": 17,
+      "w": 9,
+      "h": 7,
+      "src": "/webGallery/images/gallery2/cebitC6E8EED9-892A-4D98-86F1-DAD7BBD5E159.webp"
+    },
+    {
+      "i": "amd_vlcsnap-2026-05-05-16h54m59s021",
+      "x": 35,
+      "y": 17,
+      "w": 13,
+      "h": 7,
+      "src": "/webGallery/images/gallery2/amd_vlcsnap-2026-05-05-16h54m59s021.webp"
+    },
+    {
+      "i": "cebitTake25",
+      "x": 15,
+      "y": 19,
+      "w": 13,
+      "h": 5,
+      "src": "/webGallery/images/gallery2/cebitTake25.webp"
+    },
+    {
+      "i": "cebitvodarend1",
+      "x": 1,
+      "y": 24,
       "w": 12,
       "h": 6,
-      "src": "/images/gallery2/3_Bildschirmfoto+2018-06-26+um+16.20.02.webp"
+      "src": "/webGallery/images/gallery2/cebitvodarend1.webp"
     },
     {
-      "i": "3_DSC00658",
-      "x": 20,
-      "y": 26,
+      "i": "cebit_vodafone_ar_cas",
+      "x": 13,
+      "y": 24,
       "w": 12,
+      "h": 7,
+      "src": "/webGallery/images/gallery2/cebit_vodafone_ar_cas.webp"
+    },
+    {
+      "i": "halliDSC00321",
+      "x": 25,
+      "y": 24,
+      "w": 14,
       "h": 8,
-      "src": "/images/gallery2/3_DSC00658.webp"
+      "src": "/webGallery/images/gallery2/halliDSC00321.webp"
     },
     {
-      "i": "3_DSC01985",
-      "x": 31,
-      "y": 5,
-      "w": 12,
-      "h": 21,
-      "src": "/images/gallery2/3_DSC01985.webp"
+      "i": "halli3_DSC00304",
+      "x": 39,
+      "y": 24,
+      "w": 8,
+      "h": 8,
+      "src": "/webGallery/images/gallery2/halli3_DSC00304.webp"
     },
     {
-      "i": "3_DSC07662",
-      "x": 8,
-      "y": 21,
-      "w": 12,
-      "h": 21,
-      "src": "/images/gallery2/3_DSC07662.webp"
-    },
-    {
-      "i": "3_DSC07676",
-      "x": 20,
-      "y": 34,
-      "w": 12,
-      "h": 7,
-      "src": "/images/gallery2/3_DSC07676.webp"
-    },
-    {
-      "i": "3_DSC08767",
-      "x": 21,
-      "y": 41,
-      "w": 12,
-      "h": 7,
-      "src": "/images/gallery2/3_DSC08767.webp"
-    },
-    {
-      "i": "3_IMG_0229+1",
-      "x": 8,
-      "y": 44,
-      "w": 12,
-      "h": 9,
-      "src": "/images/gallery2/3_IMG_0229+1.webp"
-    },
-    {
-      "i": "3_SOS+Kinderdorf_2_klein",
-      "x": 32,
-      "y": 27,
-      "w": 12,
-      "h": 7,
-      "src": "/images/gallery2/3_SOS+Kinderdorf_2_klein.webp"
-    },
-    {
-      "i": "3_Screenshot 2026-03-13 13.37.30",
-      "x": 0,
-      "y": 93,
+      "i": "halli_vlcsnap-2026-05-12-21h18m45s500",
+      "x": 1,
+      "y": 30,
       "w": 12,
       "h": 5,
-      "src": "/images/gallery2/3_Screenshot 2026-03-13 13.37.30.webp"
+      "src": "/webGallery/images/gallery2/halli_vlcsnap-2026-05-12-21h18m45s500.webp"
+    },
+    {
+      "i": "halliRend4",
+      "x": 13,
+      "y": 31,
+      "w": 12,
+      "h": 7,
+      "src": "/webGallery/images/gallery2/halliRend4.webp"
+    },
+    {
+      "i": "halliScreenshot 2026-05-04 22.21.55",
+      "x": 25,
+      "y": 32,
+      "w": 19,
+      "h": 7,
+      "src": "/webGallery/images/gallery2/halliScreenshot 2026-05-04 22.21.55.webp"
+    },
+    {
+      "i": "michel3_20170116_105419",
+      "x": 3,
+      "y": 35,
+      "w": 10,
+      "h": 6,
+      "src": "/webGallery/images/gallery2/michel3_20170116_105419.webp"
+    },
+    {
+      "i": "michelin3_michelin_vr_foto1_02",
+      "x": 13,
+      "y": 38,
+      "w": 12,
+      "h": 7,
+      "src": "/webGallery/images/gallery2/michelin3_michelin_vr_foto1_02.webp"
+    },
+    {
+      "i": "michel3_20170223_231041",
+      "x": 25,
+      "y": 39,
+      "w": 11,
+      "h": 6,
+      "src": "/webGallery/images/gallery2/michel3_20170223_231041.webp"
+    },
+    {
+      "i": "michelin_8koutside_2.1.1",
+      "x": 36,
+      "y": 39,
+      "w": 12,
+      "h": 6,
+      "src": "/webGallery/images/gallery2/michelin_8koutside_2.1.1.webp"
+    },
+    {
+      "i": "michel3_20170116_123100",
+      "x": 1,
+      "y": 41,
+      "w": 12,
+      "h": 4,
+      "src": "/webGallery/images/gallery2/michel3_20170116_123100.webp"
+    },
+    {
+      "i": "michelin8kinside_2.1.2",
+      "x": 9,
+      "y": 45,
+      "w": 13,
+      "h": 6,
+      "src": "/webGallery/images/gallery2/michelin8kinside_2.1.2.webp"
+    },
+    {
+      "i": "bayervlcsnap-2026-05-05-17h12m22s980",
+      "x": 22,
+      "y": 45,
+      "w": 11,
+      "h": 6,
+      "src": "/webGallery/images/gallery2/bayervlcsnap-2026-05-05-17h12m22s980.webp"
+    },
+    {
+      "i": "s_DSC04441",
+      "x": 33,
+      "y": 45,
+      "w": 10,
+      "h": 6,
+      "src": "/webGallery/images/gallery2/s_DSC04441.webp"
+    },
+    {
+      "i": "bayer3_DSC04058",
+      "x": 1,
+      "y": 51,
+      "w": 11,
+      "h": 6,
+      "src": "/webGallery/images/gallery2/bayer3_DSC04058.webp"
+    },
+    {
+      "i": "bayer3_DSC04045",
+      "x": 12,
+      "y": 51,
+      "w": 10,
+      "h": 6,
+      "src": "/webGallery/images/gallery2/bayer3_DSC04045.webp"
+    },
+    {
+      "i": "bayervlcsnap-2026-05-05-17h13m10s788",
+      "x": 22,
+      "y": 51,
+      "w": 13,
+      "h": 6,
+      "src": "/webGallery/images/gallery2/bayervlcsnap-2026-05-05-17h13m10s788.webp"
+    },
+    {
+      "i": "bayer3_DSC04059",
+      "x": 35,
+      "y": 51,
+      "w": 8,
+      "h": 6,
+      "src": "/webGallery/images/gallery2/bayer3_DSC04059.webp"
+    },
+    {
+      "i": "voice3_DSC00652",
+      "x": 17,
+      "y": 57,
+      "w": 9,
+      "h": 13,
+      "src": "/webGallery/images/gallery2/voice3_DSC00652.webp"
+    },
+    {
+      "i": "voice3_The+Voice+of+Germany+Blind+Auditions+VR3",
+      "x": 26,
+      "y": 57,
+      "w": 9,
+      "h": 7,
+      "src": "/webGallery/images/gallery2/voice3_The+Voice+of+Germany+Blind+Auditions+VR3.webp"
+    },
+    {
+      "i": "euro3_Screenshot 2026-03-13 13.37.41",
+      "x": 35,
+      "y": 57,
+      "w": 12,
+      "h": 6,
+      "src": "/webGallery/images/gallery2/euro3_Screenshot 2026-03-13 13.37.41.webp"
+    },
+    {
+      "i": "voice_vlcsnap-2026-05-12-21h26m09s936_rend1",
+      "x": 5,
+      "y": 58,
+      "w": 12,
+      "h": 7,
+      "src": "/webGallery/images/gallery2/voice_vlcsnap-2026-05-12-21h26m09s936_rend1.webp"
+    },
+    {
+      "i": "voiceIMG_4099_ups",
+      "x": 35,
+      "y": 63,
+      "w": 11,
+      "h": 6,
+      "src": "/webGallery/images/gallery2/voiceIMG_4099_ups.webp"
+    },
+    {
+      "i": "voice3_Screenshot_2015-09-02-17-55-16",
+      "x": 26,
+      "y": 64,
+      "w": 9,
+      "h": 6,
+      "src": "/webGallery/images/gallery2/voice3_Screenshot_2015-09-02-17-55-16.webp"
+    },
+    {
+      "i": "voice3_20151216_165212",
+      "x": 3,
+      "y": 65,
+      "w": 14,
+      "h": 8,
+      "src": "/webGallery/images/gallery2/voice3_20151216_165212.webp"
+    },
+    {
+      "i": "voice_vlcsnap-2026-05-05-17h17m57s684_2",
+      "x": 35,
+      "y": 69,
+      "w": 13,
+      "h": 5,
+      "src": "/webGallery/images/gallery2/voice_vlcsnap-2026-05-05-17h17m57s684_2.webp"
+    },
+    {
+      "i": "voice3_20151216_164840",
+      "x": 17,
+      "y": 70,
+      "w": 12,
+      "h": 7,
+      "src": "/webGallery/images/gallery2/voice3_20151216_164840.webp"
     }
   ]
 }
