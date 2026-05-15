@@ -2,7 +2,7 @@
   "items": [
     {
       "i": "build20160916_084253",
-      "x": 23,
+      "x": 22,
       "y": 1,
       "w": 12,
       "h": 10,
@@ -10,7 +10,7 @@
     },
     {
       "i": "build20170713_164001",
-      "x": 35,
+      "x": 34,
       "y": 2,
       "w": 12,
       "h": 7,
@@ -18,7 +18,7 @@
     },
     {
       "i": "build3_20151013_124605",
-      "x": 11,
+      "x": 10,
       "y": 4,
       "w": 12,
       "h": 7,
@@ -26,7 +26,7 @@
     },
     {
       "i": "amd3_IMG_0229-upscale",
-      "x": 35,
+      "x": 34,
       "y": 9,
       "w": 10,
       "h": 8,
@@ -34,7 +34,7 @@
     },
     {
       "i": "build3_20151221_105428",
-      "x": 4,
+      "x": 3,
       "y": 11,
       "w": 11,
       "h": 6,
@@ -42,7 +42,7 @@
     },
     {
       "i": "build3_20151208_125227",
-      "x": 15,
+      "x": 14,
       "y": 11,
       "w": 13,
       "h": 8,
@@ -50,7 +50,7 @@
     },
     {
       "i": "build3_DSC01985",
-      "x": 28,
+      "x": 27,
       "y": 11,
       "w": 7,
       "h": 13,
@@ -58,7 +58,7 @@
     },
     {
       "i": "cebitC6E8EED9-892A-4D98-86F1-DAD7BBD5E159",
-      "x": 6,
+      "x": 5,
       "y": 17,
       "w": 9,
       "h": 7,
@@ -66,7 +66,7 @@
     },
     {
       "i": "amd_vlcsnap-2026-05-05-16h54m59s021",
-      "x": 35,
+      "x": 34,
       "y": 17,
       "w": 13,
       "h": 7,
@@ -74,7 +74,7 @@
     },
     {
       "i": "cebitTake25",
-      "x": 15,
+      "x": 14,
       "y": 19,
       "w": 13,
       "h": 5,
@@ -156,16 +156,16 @@
       "i": "michel3_20170223_231041",
       "x": 25,
       "y": 39,
-      "w": 11,
+      "w": 9,
       "h": 6,
       "src": "/webGallery/images/gallery2/michel3_20170223_231041.webp"
     },
     {
       "i": "michelin_8koutside_2.1.1",
-      "x": 36,
+      "x": 34,
       "y": 39,
       "w": 12,
-      "h": 6,
+      "h": 5,
       "src": "/webGallery/images/gallery2/michelin_8koutside_2.1.1.webp"
     },
     {
@@ -177,40 +177,48 @@
       "src": "/webGallery/images/gallery2/michel3_20170116_123100.webp"
     },
     {
-      "i": "michelin8kinside_2.1.2",
-      "x": 9,
-      "y": 45,
-      "w": 13,
-      "h": 6,
-      "src": "/webGallery/images/gallery2/michelin8kinside_2.1.2.webp"
-    },
-    {
       "i": "bayervlcsnap-2026-05-05-17h12m22s980",
-      "x": 22,
-      "y": 45,
-      "w": 11,
-      "h": 6,
+      "x": 34,
+      "y": 44,
+      "w": 9,
+      "h": 9,
       "src": "/webGallery/images/gallery2/bayervlcsnap-2026-05-05-17h12m22s980.webp"
     },
     {
-      "i": "s_DSC04441",
-      "x": 33,
+      "i": "michelin8kinside_2.1.2",
+      "x": 5,
       "y": 45,
-      "w": 10,
-      "h": 6,
-      "src": "/webGallery/images/gallery2/s_DSC04441.webp"
+      "w": 13,
+      "h": 5,
+      "src": "/webGallery/images/gallery2/michelin8kinside_2.1.2.webp"
     },
     {
       "i": "bayer3_DSC04058",
-      "x": 1,
-      "y": 51,
-      "w": 11,
+      "x": 18,
+      "y": 45,
+      "w": 10,
       "h": 6,
       "src": "/webGallery/images/gallery2/bayer3_DSC04058.webp"
     },
     {
+      "i": "bayer3_DSC04059",
+      "x": 28,
+      "y": 45,
+      "w": 6,
+      "h": 8,
+      "src": "/webGallery/images/gallery2/bayer3_DSC04059.webp"
+    },
+    {
+      "i": "euro3_Screenshot 2026-03-13 13.37.41",
+      "x": 1,
+      "y": 50,
+      "w": 17,
+      "h": 7,
+      "src": "/webGallery/images/gallery2/euro3_Screenshot 2026-03-13 13.37.41.webp"
+    },
+    {
       "i": "bayer3_DSC04045",
-      "x": 12,
+      "x": 18,
       "y": 51,
       "w": 10,
       "h": 6,
@@ -218,91 +226,387 @@
     },
     {
       "i": "bayervlcsnap-2026-05-05-17h13m10s788",
-      "x": 22,
-      "y": 51,
-      "w": 13,
+      "x": 28,
+      "y": 53,
+      "w": 17,
       "h": 6,
       "src": "/webGallery/images/gallery2/bayervlcsnap-2026-05-05-17h13m10s788.webp"
     },
     {
-      "i": "bayer3_DSC04059",
-      "x": 35,
-      "y": 51,
-      "w": 8,
-      "h": 6,
-      "src": "/webGallery/images/gallery2/bayer3_DSC04059.webp"
-    },
-    {
-      "i": "voice3_DSC00652",
-      "x": 17,
-      "y": 57,
-      "w": 9,
-      "h": 13,
-      "src": "/webGallery/images/gallery2/voice3_DSC00652.webp"
-    },
-    {
-      "i": "voice3_The+Voice+of+Germany+Blind+Auditions+VR3",
-      "x": 26,
-      "y": 57,
-      "w": 9,
-      "h": 7,
-      "src": "/webGallery/images/gallery2/voice3_The+Voice+of+Germany+Blind+Auditions+VR3.webp"
-    },
-    {
-      "i": "euro3_Screenshot 2026-03-13 13.37.41",
-      "x": 35,
-      "y": 57,
-      "w": 12,
-      "h": 6,
-      "src": "/webGallery/images/gallery2/euro3_Screenshot 2026-03-13 13.37.41.webp"
-    },
-    {
       "i": "voice_vlcsnap-2026-05-12-21h26m09s936_rend1",
-      "x": 5,
-      "y": 58,
+      "x": 4,
+      "y": 57,
       "w": 12,
       "h": 7,
       "src": "/webGallery/images/gallery2/voice_vlcsnap-2026-05-12-21h26m09s936_rend1.webp"
     },
     {
       "i": "voiceIMG_4099_ups",
-      "x": 35,
-      "y": 63,
-      "w": 11,
-      "h": 6,
+      "x": 16,
+      "y": 57,
+      "w": 12,
+      "h": 7,
       "src": "/webGallery/images/gallery2/voiceIMG_4099_ups.webp"
     },
     {
-      "i": "voice3_Screenshot_2015-09-02-17-55-16",
-      "x": 26,
-      "y": 64,
+      "i": "voice3_The+Voice+of+Germany+Blind+Auditions+VR3",
+      "x": 28,
+      "y": 59,
       "w": 9,
-      "h": 6,
-      "src": "/webGallery/images/gallery2/voice3_Screenshot_2015-09-02-17-55-16.webp"
+      "h": 7,
+      "src": "/webGallery/images/gallery2/voice3_The+Voice+of+Germany+Blind+Auditions+VR3.webp"
+    },
+    {
+      "i": "s_20151122_134816",
+      "x": 37,
+      "y": 59,
+      "w": 9,
+      "h": 5,
+      "src": "/webGallery/images/gallery2/s_20151122_134816.webp"
     },
     {
       "i": "voice3_20151216_165212",
-      "x": 3,
-      "y": 65,
+      "x": 5,
+      "y": 64,
       "w": 14,
       "h": 8,
       "src": "/webGallery/images/gallery2/voice3_20151216_165212.webp"
     },
     {
+      "i": "voice3_DSC00652",
+      "x": 19,
+      "y": 64,
+      "w": 9,
+      "h": 13,
+      "src": "/webGallery/images/gallery2/voice3_DSC00652.webp"
+    },
+    {
       "i": "voice_vlcsnap-2026-05-05-17h17m57s684_2",
-      "x": 35,
-      "y": 69,
+      "x": 28,
+      "y": 66,
       "w": 13,
       "h": 5,
       "src": "/webGallery/images/gallery2/voice_vlcsnap-2026-05-05-17h17m57s684_2.webp"
     },
     {
+      "i": "voice3_Screenshot_2015-09-02-17-55-16",
+      "x": 28,
+      "y": 71,
+      "w": 7,
+      "h": 6,
+      "src": "/webGallery/images/gallery2/voice3_Screenshot_2015-09-02-17-55-16.webp"
+    },
+    {
+      "i": "s_DSC04441",
+      "x": 35,
+      "y": 71,
+      "w": 10,
+      "h": 6,
+      "src": "/webGallery/images/gallery2/s_DSC04441.webp"
+    },
+    {
+      "i": "brothervlcsnap-2026-05-05-16h53m36s301",
+      "x": 0,
+      "y": 72,
+      "w": 13,
+      "h": 7,
+      "src": "/webGallery/images/gallery2/brothervlcsnap-2026-05-05-16h53m36s301.webp"
+    },
+    {
+      "i": "s_DSC04434",
+      "x": 13,
+      "y": 72,
+      "w": 6,
+      "h": 5,
+      "src": "/webGallery/images/gallery2/s_DSC04434.webp"
+    },
+    {
       "i": "voice3_20151216_164840",
-      "x": 17,
-      "y": 70,
+      "x": 13,
+      "y": 77,
       "w": 12,
       "h": 7,
       "src": "/webGallery/images/gallery2/voice3_20151216_164840.webp"
+    },
+    {
+      "i": "coke_Screenshot 2026-05-09 00.59.29",
+      "x": 25,
+      "y": 77,
+      "w": 12,
+      "h": 6,
+      "src": "/webGallery/images/gallery2/coke_Screenshot 2026-05-09 00.59.29.webp"
+    },
+    {
+      "i": "coke20161103_113145",
+      "x": 37,
+      "y": 77,
+      "w": 9,
+      "h": 8,
+      "src": "/webGallery/images/gallery2/coke20161103_113145.webp"
+    },
+    {
+      "i": "brotherScreenshot 2026-05-04 22.21.17",
+      "x": 1,
+      "y": 79,
+      "w": 12,
+      "h": 5,
+      "src": "/webGallery/images/gallery2/brotherScreenshot 2026-05-04 22.21.17.webp"
+    },
+    {
+      "i": "coke_raupe8k1",
+      "x": 25,
+      "y": 83,
+      "w": 12,
+      "h": 6,
+      "src": "/webGallery/images/gallery2/coke_raupe8k1.webp"
+    },
+    {
+      "i": "depart20160616_131923(0)",
+      "x": 8,
+      "y": 84,
+      "w": 6,
+      "h": 11,
+      "src": "/webGallery/images/gallery2/depart20160616_131923(0).webp"
+    },
+    {
+      "i": "depart3_20160626-Promo-Stand-T3-Triathlon-0180-2-1-ups-upscale",
+      "x": 14,
+      "y": 84,
+      "w": 11,
+      "h": 8,
+      "src": "/webGallery/images/gallery2/depart3_20160626-Promo-Stand-T3-Triathlon-0180-2-1-ups-upscale.webp"
+    },
+    {
+      "i": "bertels3_20180327_102019",
+      "x": 37,
+      "y": 85,
+      "w": 11,
+      "h": 6,
+      "src": "/webGallery/images/gallery2/bertels3_20180327_102019.webp"
+    },
+    {
+      "i": "bertelsmann3_DSC06479_klein",
+      "x": 25,
+      "y": 89,
+      "w": 12,
+      "h": 8,
+      "src": "/webGallery/images/gallery2/bertelsmann3_DSC06479_klein.webp"
+    },
+    {
+      "i": "bertelsmann3_DSC06496",
+      "x": 37,
+      "y": 91,
+      "w": 10,
+      "h": 6,
+      "src": "/webGallery/images/gallery2/bertelsmann3_DSC06496.webp"
+    },
+    {
+      "i": "departvlcsnap-2026-05-05-17h16m38s812",
+      "x": 14,
+      "y": 92,
+      "w": 11,
+      "h": 5,
+      "src": "/webGallery/images/gallery2/departvlcsnap-2026-05-05-17h16m38s812.webp"
+    },
+    {
+      "i": "ferragamovlcsnap-2026-05-05-14h35m47s174",
+      "x": 1,
+      "y": 95,
+      "w": 13,
+      "h": 5,
+      "src": "/webGallery/images/gallery2/ferragamovlcsnap-2026-05-05-14h35m47s174.webp"
+    },
+    {
+      "i": "ferragamo20170216_131750",
+      "x": 14,
+      "y": 97,
+      "w": 9,
+      "h": 6,
+      "src": "/webGallery/images/gallery2/ferragamo20170216_131750.webp"
+    },
+    {
+      "i": "ferragamo20170216_095832_ups",
+      "x": 23,
+      "y": 97,
+      "w": 8,
+      "h": 10,
+      "src": "/webGallery/images/gallery2/ferragamo20170216_095832_ups.webp"
+    },
+    {
+      "i": "feragamo3_20170216_111848_ups",
+      "x": 31,
+      "y": 97,
+      "w": 11,
+      "h": 5,
+      "src": "/webGallery/images/gallery2/feragamo3_20170216_111848_ups.webp"
+    },
+    {
+      "i": "ferragamovlcsnap-2026-05-05-16h16m36s980",
+      "x": 3,
+      "y": 100,
+      "w": 11,
+      "h": 5,
+      "src": "/webGallery/images/gallery2/ferragamovlcsnap-2026-05-05-16h16m36s980.webp"
+    },
+    {
+      "i": "afrikavlcsnap-2026-05-05-16h35m11s197",
+      "x": 31,
+      "y": 102,
+      "w": 14,
+      "h": 6,
+      "src": "/webGallery/images/gallery2/afrikavlcsnap-2026-05-05-16h35m11s197.webp"
+    },
+    {
+      "i": "afrika3_DSC08767",
+      "x": 14,
+      "y": 103,
+      "w": 9,
+      "h": 8,
+      "src": "/webGallery/images/gallery2/afrika3_DSC08767.webp"
+    },
+    {
+      "i": "afikavlcsnap-2026-05-05-16h34m41s567",
+      "x": 1,
+      "y": 105,
+      "w": 13,
+      "h": 6,
+      "src": "/webGallery/images/gallery2/afikavlcsnap-2026-05-05-16h34m41s567.webp"
+    },
+    {
+      "i": "afrika3_image1-ups-upscale",
+      "x": 23,
+      "y": 107,
+      "w": 8,
+      "h": 11,
+      "src": "/webGallery/images/gallery2/afrika3_image1-ups-upscale.webp"
+    },
+    {
+      "i": "afrika3_DSC_4522",
+      "x": 31,
+      "y": 108,
+      "w": 7,
+      "h": 10,
+      "src": "/webGallery/images/gallery2/afrika3_DSC_4522.webp"
+    },
+    {
+      "i": "afrika3_SOS+Kinderdorf_2_klein",
+      "x": 11,
+      "y": 111,
+      "w": 12,
+      "h": 7,
+      "src": "/webGallery/images/gallery2/afrika3_SOS+Kinderdorf_2_klein.webp"
+    },
+    {
+      "i": "cobra3_20190330_093551",
+      "x": 38,
+      "y": 112,
+      "w": 9,
+      "h": 6,
+      "src": "/webGallery/images/gallery2/cobra3_20190330_093551.webp"
+    },
+    {
+      "i": "flug3_2020-02-07 06.41.05",
+      "x": 5,
+      "y": 118,
+      "w": 11,
+      "h": 6,
+      "src": "/webGallery/images/gallery2/flug3_2020-02-07 06.41.05.webp"
+    },
+    {
+      "i": "cobra3_20190330_091306",
+      "x": 16,
+      "y": 118,
+      "w": 12,
+      "h": 7,
+      "src": "/webGallery/images/gallery2/cobra3_20190330_091306.webp"
+    },
+    {
+      "i": "cobra3_20190330_093906",
+      "x": 28,
+      "y": 118,
+      "w": 12,
+      "h": 6,
+      "src": "/webGallery/images/gallery2/cobra3_20190330_093906.webp"
+    },
+    {
+      "i": "lindenbergvlcsnap-2026-05-05-16h24m06s561",
+      "x": 1,
+      "y": 124,
+      "w": 15,
+      "h": 5,
+      "src": "/webGallery/images/gallery2/lindenbergvlcsnap-2026-05-05-16h24m06s561.webp"
+    },
+    {
+      "i": "lindenberg3_20170617_215831(0)",
+      "x": 28,
+      "y": 124,
+      "w": 5,
+      "h": 7,
+      "src": "/webGallery/images/gallery2/lindenberg3_20170617_215831(0).webp"
+    },
+    {
+      "i": "lindenbergvlcsnap-2026-05-05-16h23m27s920",
+      "x": 33,
+      "y": 124,
+      "w": 13,
+      "h": 7,
+      "src": "/webGallery/images/gallery2/lindenbergvlcsnap-2026-05-05-16h23m27s920.webp"
+    },
+    {
+      "i": "lindenberg3_DSC07750",
+      "x": 16,
+      "y": 125,
+      "w": 12,
+      "h": 7,
+      "src": "/webGallery/images/gallery2/lindenberg3_DSC07750.webp"
+    },
+    {
+      "i": "lindenberg_mistika1",
+      "x": 4,
+      "y": 129,
+      "w": 12,
+      "h": 6,
+      "src": "/webGallery/images/gallery2/lindenberg_mistika1.webp"
+    },
+    {
+      "i": "lindenberg_stagerender2",
+      "x": 28,
+      "y": 131,
+      "w": 12,
+      "h": 7,
+      "src": "/webGallery/images/gallery2/lindenberg_stagerender2.webp"
+    },
+    {
+      "i": "lindenberg3_20170620_091446",
+      "x": 16,
+      "y": 132,
+      "w": 12,
+      "h": 7,
+      "src": "/webGallery/images/gallery2/lindenberg3_20170620_091446.webp"
+    },
+    {
+      "i": "s_DSC07768",
+      "x": 4,
+      "y": 137,
+      "w": 12,
+      "h": 7,
+      "src": "/webGallery/images/gallery2/s_DSC07768.webp"
+    },
+    {
+      "i": "igo3_20190409_174031",
+      "x": 16,
+      "y": 139,
+      "w": 7,
+      "h": 12,
+      "src": "/webGallery/images/gallery2/igo3_20190409_174031.webp"
+    },
+    {
+      "i": "lindenberg3_DSC07572",
+      "x": 23,
+      "y": 144,
+      "w": 7,
+      "h": 11,
+      "src": "/webGallery/images/gallery2/lindenberg3_DSC07572.webp"
     }
   ]
 }
