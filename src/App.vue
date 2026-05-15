@@ -4,6 +4,7 @@ import SiteHeader from './components/SiteHeader.vue'
 import GalleryModule from './components/GalleryModule.vue'
 import GalleryEditor from './components/GalleryEditor.vue'
 import GalleryListView from './components/GalleryListView.vue'
+import SiteFooter from './components/SiteFooter.vue'
 
 const CONFIG_G1 = 'layout.json'
 const CONFIG_G2 = 'layout2.json'
@@ -89,5 +90,7 @@ function exitEditor() {
         @save-scroll="onModuleSaveScroll"
       />
     </template>
+
+    <SiteFooter />
   </div>
 </template>
