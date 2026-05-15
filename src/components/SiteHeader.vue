@@ -17,7 +17,57 @@ function isActiveNav(tabKey) {
 
 const rawHeaderText = ref('')
 const headerLines = computed(() => buildHeaderLines(rawHeaderText.value))
+const headerRenderTree = computed(() => buildHeaderRenderTree(headerLines.value))
 const colorCfg = ref(null)
+
+const NAV_TARGETS = [
+  { key: 'g1', label: 'MOTION CAPTURE' },
+  { key: 'g2', label: '360 VIDEO CAPTURE' },
+  { key: 'list', label: 'REFERENCES / ABOUT' },
+]
+
+/** Hintergrund des aktiven Tab-Textbands (gleicher Ton wie Thumbnail-Hover-Rahmen) */
+const ACTIVE_TEXT_BAND_BG = '#facc15'
+
+/** Datenbasierter Hover (zuverlässig im <pre>-ANSI-Grid) */
+const hoveredNavKey = ref(null)
+
+function isNavHovered(navKey) {
+  return hoveredNavKey.value === navKey
+}
+
+function onNavBtnEnter(navKey) {
+  hoveredNavKey.value = navKey
+}
+
+function onNavBtnLeave() {
+  hoveredNavKey.value = null
+}
+
+function navRowClass(row, navKey) {
+  const hovered = isNavHovered(navKey)
+  return {
+    'header-btn-row': true,
+    'header-btn-row--label': row.some((c) => c.seg?.activeTextBand),
+    'header-btn-row--hovered': hovered,
+  }
+}
+
+function navSegClass(seg, navKey) {
+  return {
+    ...clsForSegClasses(seg),
+    'header-nav-seg--hovered': isNavHovered(navKey),
+  }
+}
+
+function clsForSegClasses(seg) {
+  return {
+    'ansi-seg': true,
+    'ansi-bright': Boolean(seg.bright),
+    'ansi-hue': Boolean(seg.hue),
+    'active-text-band': Boolean(seg.activeTextBand),
+  }
+}
 
 const activeKey = computed(() => (props.isEditMode ? null : props.galleryTab))
 
@@ -52,16 +102,17 @@ function decodeBestEffort(bytes) {
 }
 
 function clsForSeg(seg) {
-  const classes = ['ansi-seg']
-  if (seg.bright) classes.push('ansi-bright')
-  if (seg.hue) classes.push('ansi-hue')
-  return classes.join(' ')
+  const c = clsForSegClasses(seg)
+  return Object.keys(c).filter((k) => c[k]).join(' ')
 }
 
-function styleForSeg(seg) {
+function styleForSeg(seg, navKey = null) {
+  if (seg.activeTextBand) return {}
   const st = {}
   if (seg.fgIdx != null) st.color = VGA_PALETTE[seg.fgIdx] ?? undefined
-  if (seg.bgIdx != null) st.backgroundColor = VGA_PALETTE[seg.bgIdx] ?? undefined
+  if (seg.bgIdx != null && !(navKey && isNavHovered(navKey))) {
+    st.backgroundColor = VGA_PALETTE[seg.bgIdx] ?? undefined
+  }
   return st
 }
 
@@ -152,7 +203,7 @@ function segLineFromCharStyles(chars, styles) {
     const st = styles[i] || {}
     const key = `${st.fgIdx ?? ''}|${st.bgIdx ?? ''}|${st.hue ? 1 : 0}|${
       st.bright ? 1 : 0
-    }|${st.btnKey || ''}`
+    }|${st.btnKey || ''}|${st.navBtnKey || ''}|${st.activeTextBand ? 1 : 0}`
     if (!cur || cur._key !== key) {
       cur = {
         _key: key,
@@ -162,6 +213,8 @@ function segLineFromCharStyles(chars, styles) {
         hue: Boolean(st.hue),
         bright: Boolean(st.bright),
         btnKey: st.btnKey ?? null,
+        navBtnKey: st.navBtnKey ?? null,
+        activeTextBand: Boolean(st.activeTextBand),
       }
       segs.push(cur)
     } else {
@@ -172,19 +225,111 @@ function segLineFromCharStyles(chars, styles) {
   return { segments: segs }
 }
 
+function collectNavBoxRegions(lines) {
+  const regions = []
+  for (const nt of NAV_TARGETS) {
+    const labelLineIdx = lines.findIndex((ln) => ln.includes(nt.label))
+    if (labelLineIdx === -1) continue
+    const cols = findBoxColsFromLabelLine(lines[labelLineIdx], nt.label)
+    if (!cols) continue
+    const labelIdx = lines[labelLineIdx].indexOf(nt.label)
+    for (const lineIdx of [
+      labelLineIdx - 2,
+      labelLineIdx - 1,
+      labelLineIdx,
+      labelLineIdx + 1,
+    ]) {
+      if (lineIdx < 0 || lineIdx >= lines.length) continue
+      regions.push({
+        key: nt.key,
+        line: lineIdx,
+        start: cols.start,
+        end: cols.end,
+        labelLine: labelLineIdx,
+        labelStart: labelIdx,
+        labelEnd: labelIdx + nt.label.length - 1,
+      })
+    }
+  }
+  return regions
+}
+
+function navRegionAt(regions, lineIdx, colIdx) {
+  return (
+    regions.find(
+      (r) => r.line === lineIdx && colIdx >= r.start && colIdx <= r.end,
+    ) ?? null
+  )
+}
+
+function isNavLabelChar(region, lineIdx, colIdx) {
+  return (
+    region != null &&
+    lineIdx === region.labelLine &&
+    colIdx >= region.labelStart &&
+    colIdx <= region.labelEnd
+  )
+}
+
+const NAV_VERT_BORDER_CHARS = new Set(['│', '║'])
+
+/** Label-Zeile: nur zwischen den vertikalen Rahmen (ohne │/║ selbst) */
+function isNavLabelRowInterior(region, lineIdx, colIdx, char) {
+  if (region == null || lineIdx !== region.labelLine) return false
+  if (colIdx < region.start + 1 || colIdx > region.end - 1) return false
+  if (char != null && NAV_VERT_BORDER_CHARS.has(char)) return false
+  return true
+}
+
+function buildHeaderRenderTree(lines) {
+  const tree = []
+  let navNode = null
+
+  for (const ln of lines) {
+    for (const seg of ln.segments) {
+      if (seg.navBtnKey) {
+        if (!navNode || navNode.key !== seg.navBtnKey) {
+          navNode = { type: 'navBtn', key: seg.navBtnKey, rows: [] }
+          tree.push(navNode)
+        }
+        let row = navNode.rows[navNode.rows.length - 1]
+        if (!row) {
+          row = []
+          navNode.rows.push(row)
+        }
+        row.push({ type: 'seg', seg })
+        continue
+      }
+      navNode = null
+      if (seg.btnKey === '__enter_editor__') {
+        tree.push({ type: 'editorBtn', seg })
+      } else {
+        tree.push({ type: 'seg', seg })
+      }
+    }
+    if (navNode) {
+      navNode.rows.push([])
+    } else {
+      tree.push({ type: 'nl' })
+    }
+  }
+
+  if (navNode?.rows.length) {
+    const last = navNode.rows[navNode.rows.length - 1]
+    if (!last.length) navNode.rows.pop()
+  }
+
+  return tree
+}
+
 function applyActiveBoxSwap(lines) {
-  const targets = [
-    { key: 'g1', label: 'MOTION CAPTURE' },
-    { key: 'g2', label: '360 VIDEO CAPTURE' },
-    { key: 'list', label: 'REFERENCES / ABOUT' },
-  ]
   const aKey = activeKey.value
   if (!aKey) return { lines, activeRanges: [] }
 
   const out = [...lines]
   const ranges = []
 
-  for (const t of targets) {
+  for (const t of NAV_TARGETS) {
     const idx = lines.findIndex((ln) => ln.includes(t.label))
     if (idx === -1) continue
     const r = findBoxColsFromLabelLine(lines[idx], t.label)
@@ -212,6 +357,7 @@ function buildHeaderLines(text) {
   const clean = String(text || '').replace(/\r\n/g, '\n')
   const baseLines = clean.split('\n')
   const { lines, activeRanges } = applyActiveBoxSwap(baseLines)
+  const navRegions = collectNavBoxRegions(lines)
   const cfg = colorCfg.value
 
   const out = []
@@ -236,12 +382,6 @@ function buildHeaderLines(text) {
     const isWelcome = line.includes('Be Welcome To Browse Impressions Of Earlier Works And Projects')
     const isMalte = line.includes('MALTE MAAS')
     const isCaptureStudio = line.includes('CAPTURE STUDIO')
-
-    const navTargets = [
-      { key: 'g1', label: 'MOTION CAPTURE' },
-      { key: 'g2', label: '360 VIDEO CAPTURE' },
-      { key: 'list', label: 'REFERENCES / ABOUT' },
-    ]
 
     // Default look: dim gray for visible glyphs (monochrome, should NOT hue-cycle)
     for (let i = 0; i < chars.length; i += 1) {
@@ -296,33 +436,35 @@ function buildHeaderLines(text) {
       }
     }
 
-    // Navigation boxes: border yellow, labels magenta (clickable)
-    for (const nt of navTargets) {
-      const idx = line.indexOf(nt.label)
-      if (idx >= 0) {
-        const range = findBoxRange(line, nt.label)
-        if (range) {
-          for (let i = range.start; i <= range.end; i += 1) {
-            if (BOX_CHARS.has(chars[i]) || chars[i] === ' ') {
-              styles[i].fgIdx = 14
-              styles[i].hue = Boolean(cfg?.cycle?.[14])
-              styles[i].bright = true
-            }
-          }
-          for (let i = idx; i < idx + nt.label.length; i += 1) {
-            const isActive = activeKey.value === nt.key
-            styles[i].fgIdx = isActive ? 15 : 13
-            styles[i].hue = isActive ? false : Boolean(cfg?.cycle?.[13])
-            styles[i].bright = true
-            styles[i].btnKey = nt.key
-          }
-          // extra glow for active tab content (after swap)
-          if (activeKey.value === nt.key) {
-            for (let i = range.start; i <= range.end; i += 1) {
-              styles[i].bright = true
-            }
-          }
-        }
+    // Navigation boxes: gesamter Rahmen klickbar; aktiver Tab = grünes Text-Band
+    for (let i = 0; i < chars.length; i += 1) {
+      const navReg = navRegionAt(navRegions, li, i)
+      if (!navReg) continue
+
+      styles[i].navBtnKey = navReg.key
+
+      const isLabel = isNavLabelChar(navReg, li, i)
+      const isLabelInterior = isNavLabelRowInterior(navReg, li, i, chars[i])
+      const isActive = activeKey.value === navReg.key
+
+      if (BOX_CHARS.has(chars[i]) || chars[i] === ' ') {
+        styles[i].fgIdx = 14
+        styles[i].hue = Boolean(cfg?.cycle?.[14])
+        styles[i].bright = true
+      }
+
+      if (isActive && isLabelInterior) {
+        styles[i].activeTextBand = true
+        styles[i].fgIdx = 0
+        styles[i].bgIdx = 10
+        styles[i].hue = false
+        styles[i].bright = false
+      } else if (isLabel) {
+        styles[i].fgIdx = 13
+        styles[i].hue = Boolean(cfg?.cycle?.[13])
+        styles[i].bright = true
+      } else if (isActive) {
+        styles[i].bright = true
       }
     }
 
@@ -404,19 +546,41 @@ onMounted(async () => {
     <div class="ansi-header-wrap">
       <div class="ansi-header-canvas">
         <pre class="ansi-pre" aria-label="Navigation (ANSI)">
-<template v-for="(ln, li) in headerLines" :key="li"><span
-  v-for="(seg, si) in ln.segments"
-  :key="`${li}-${si}`"
-  :class="clsForSeg(seg)"
-  :style="styleForSeg(seg)"
-><button
-  v-if="seg.btnKey"
+<template v-for="(node, ni) in headerRenderTree" :key="ni"><button
+  v-if="node.type === 'navBtn'"
+  type="button"
+  class="header-btn"
+  :class="{
+    'header-btn--active': isActiveNav(node.key),
+    'header-btn--hovered': isNavHovered(node.key),
+  }"
+  :aria-current="isActiveNav(node.key) ? 'page' : undefined"
+  @mouseenter="onNavBtnEnter(node.key)"
+  @mouseleave="onNavBtnLeave"
+  @click="emit('select-gallery', node.key)"
+><span
+  v-for="(row, ri) in node.rows"
+  v-show="row.length > 0"
+  :key="`${ni}-r${ri}`"
+  :class="navRowClass(row, node.key)"
+><span
+  v-for="(child, ci) in row"
+  :key="`${ni}-${ri}-${ci}`"
+  :class="navSegClass(child.seg, node.key)"
+  :style="styleForSeg(child.seg, node.key)"
+>{{ child.seg.text }}</span></span></button><button
+  v-else-if="node.type === 'editorBtn'"
   type="button"
   class="ansi-btn"
-  :class="seg.btnKey !== '__enter_editor__' && isActiveNav(seg.btnKey) ? 'ansi-btn--active' : ''"
-  @click="seg.btnKey === '__enter_editor__' ? emit('enter-editor') : emit('select-gallery', seg.btnKey)"
->{{ seg.text }}</button><template v-else>{{ seg.text }}</template></span><span class="ansi-nl">
-</span></template>
+  @click="emit('enter-editor')"
+>{{ node.seg.text }}</button><span
+  v-else-if="node.type === 'seg'"
+  :class="clsForSeg(node.seg)"
+  :style="styleForSeg(node.seg)"
+>{{ node.seg.text }}</span><span
+  v-else-if="node.type === 'nl'"
+  class="ansi-nl"
+></span></template>
         </pre>
       </div>
     </div>
@@ -555,7 +719,56 @@ onMounted(async () => {
   outline-offset: 2px;
 }
 
-.ansi-btn--active {
-  filter: brightness(1.22) saturate(1.1);
+/* Nav-Button: 4 Zeilen als ein Block — Hover synchron über alle Zeilen */
+.header-btn {
+  display: inline-block;
+  vertical-align: top;
+  padding: 0;
+  margin: 0;
+  border: none;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+  line-height: inherit;
+  letter-spacing: inherit;
+  text-align: left;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.header-btn-row {
+  display: block;
+  white-space: pre;
+  line-height: inherit;
+  letter-spacing: inherit;
+}
+
+.header-btn:focus-visible {
+  outline: 2px solid rgb(250 204 21 / 0.85);
+  outline-offset: 2px;
+}
+
+/* Hover via Vue-State (hoveredNavKey) — alle 4 Zeilen gleichzeitig */
+.header-btn-row--hovered {
+  background-color: #2a2a2a !important;
+}
+
+.header-btn-row--hovered .ansi-seg,
+.header-nav-seg--hovered {
+  background-color: transparent !important;
+}
+
+.header-btn-row--hovered .active-text-band {
+  color: #facc15 !important;
+  animation: none !important;
+  filter: none !important;
+}
+
+.active-text-band {
+  color: #000000 !important;
+  background-color: v-bind('ACTIVE_TEXT_BAND_BG') !important;
+  animation: none !important;
+  filter: none !important;
 }
 </style>

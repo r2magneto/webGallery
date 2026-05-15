@@ -28,6 +28,7 @@ import {
   needsDimensionInit,
   squareRowHeightPx,
 } from '../utils/gridAspect.js'
+import { createGridHostWidthObserver } from '../utils/gridHostResize.js'
 
 const props = defineProps({
   /** Aktive JSON im public-Ordner (z. B. layout.json). */
@@ -48,24 +49,21 @@ const layout = ref([])
 const gridRef = ref(null)
 const gridHostRef = ref(null)
 const gridHostWidth = ref(0)
-let gridHostResizeObserver = null
 
 const gridRowHeight = computed(() =>
   squareRowHeightPx(gridHostWidth.value || 960),
 )
 
+const gridHostWidthObserver = createGridHostWidthObserver({
+  onWidthChange(w) {
+    gridHostWidth.value = w
+  },
+})
+
 function bindGridHostResizeObserver() {
-  gridHostResizeObserver?.disconnect()
   const el = gridHostRef.value
   if (!el) return
-  gridHostWidth.value = el.offsetWidth
-  if (typeof ResizeObserver !== 'undefined') {
-    gridHostResizeObserver = new ResizeObserver((entries) => {
-      const w = entries[0]?.contentRect?.width
-      if (w != null && w > 0) gridHostWidth.value = w
-    })
-    gridHostResizeObserver.observe(el)
-  }
+  gridHostWidthObserver.bind(el, el.offsetWidth)
 }
 
 /** Pro Bild-ID: naturalWidth / naturalHeight (u. a. für Resize-Lock & Scan-Import). */
@@ -432,8 +430,7 @@ onBeforeUnmount(() => {
   window.removeEventListener('blur', clearResizeModifierKeys)
   window.removeEventListener('keydown', onCaptionModalKeydown, true)
   gridEmitterUnsubscribe?.()
-  gridHostResizeObserver?.disconnect()
-  gridHostResizeObserver = null
+  gridHostWidthObserver.disconnect()
 })
 
 function layoutPayload() {

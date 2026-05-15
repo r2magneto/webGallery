@@ -11,8 +11,17 @@ import {
 import { GridLayout, GridItem } from 'vue-grid-layout-v3'
 import { fetchGalleryLayoutItems } from '../apiConfig.js'
 import { resolveGalleryImageSrc } from '../config/galleryPaths.js'
-import { getLenis, resizeLenis, scrollWindowToY } from '../lenisClient.js'
-import { squareRowHeightPx } from '../utils/gridAspect.js'
+import {
+  getLenis,
+  scheduleResizeLenis,
+  cancelScheduledResizeLenis,
+  scrollWindowToY,
+} from '../lenisClient.js'
+import {
+  squareRowHeightPx,
+  tileContainerAspectStyle,
+} from '../utils/gridAspect.js'
+import { createGridHostWidthObserver } from '../utils/gridHostResize.js'
 import GalleryScrollbar from './GalleryScrollbar.vue'
 
 const props = defineProps({
@@ -60,25 +69,36 @@ const revealTiles = ref(false)
 const viewerRootRef = ref(null)
 const gridHostRef = ref(null)
 const gridHostWidth = ref(0)
-let gridHostResizeObserver = null
 
 const gridRowHeight = computed(() =>
   squareRowHeightPx(gridHostWidth.value || 960),
 )
 
+function notifyLenisAfterGridSettled() {
+  nextTick(() => {
+    scheduleResizeLenis()
+  })
+}
+
+const gridHostWidthObserver = createGridHostWidthObserver({
+  onWidthChange(w) {
+    gridHostWidth.value = w
+    notifyLenisAfterGridSettled()
+  },
+})
+
 function bindGridHostResizeObserver() {
-  gridHostResizeObserver?.disconnect()
   const el = gridHostRef.value
   if (!el) return
-  gridHostWidth.value = el.offsetWidth
-  if (typeof ResizeObserver !== 'undefined') {
-    gridHostResizeObserver = new ResizeObserver((entries) => {
-      const w = entries[0]?.contentRect?.width
-      if (w != null && w > 0) gridHostWidth.value = w
-      resizeLenis()
-    })
-    gridHostResizeObserver.observe(el)
-  }
+  gridHostWidthObserver.bind(el, el.offsetWidth)
+}
+
+function tileMediaStyle(item) {
+  return tileContainerAspectStyle(
+    item,
+    gridHostWidth.value || 960,
+    gridRowHeight.value,
+  )
 }
 
 /** null = zu */
@@ -842,10 +862,7 @@ async function loadGalleryFromConfig() {
   }
 
   await nextTick()
-  resizeLenis()
-  requestAnimationFrame(() => {
-    resizeLenis()
-  })
+  notifyLenisAfterGridSettled()
 }
 
 onMounted(async () => {
@@ -917,8 +934,8 @@ onBeforeUnmount(() => {
   clearMorphCloseFadeTimer()
   clearCaptionFadeBeforeCloseTimer()
   window.removeEventListener('keydown', onLightboxKeydown)
-  gridHostResizeObserver?.disconnect()
-  gridHostResizeObserver = null
+  gridHostWidthObserver.disconnect()
+  cancelScheduledResizeLenis()
 })
 </script>
 
@@ -992,13 +1009,14 @@ onBeforeUnmount(() => {
               @click="openLightbox(index, $event)"
             >
               <div
-                class="relative h-full w-full overflow-hidden bg-neutral-900"
+                class="viewer-tile-media relative h-full w-full overflow-hidden bg-neutral-900"
+                :style="tileMediaStyle(item)"
               >
                 <img
                   :src="item.src"
                   :alt="item.i"
                   draggable="false"
-                  class="viewer-tile-img pointer-events-none h-full w-full object-cover"
+                  class="viewer-tile-img pointer-events-none absolute inset-0 h-full w-full object-cover"
                   :class="revealTiles ? 'opacity-100' : 'opacity-0'"
                   :style="{
                     '--reveal-delay': revealTiles ? `${index * 48}ms` : '0ms',
@@ -1261,6 +1279,13 @@ onBeforeUnmount(() => {
 
 .viewer-grid :deep(.vue-grid-item) {
   overflow: visible;
+}
+
+/* Festes Seitenverhältnis aus Raster-Konfiguration — kein Layout-Sprung beim Bild-Load */
+.viewer-tile-media {
+  contain: layout style;
+  min-height: 0;
+  max-height: 100%;
 }
 
 .viewer-grid :deep(.vue-resizable-handle) {

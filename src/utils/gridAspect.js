@@ -87,6 +87,20 @@ export function needsDimensionInit(item) {
   return badW || badH
 }
 
+/**
+ * CSS aspect-ratio für Thumbnail-Container (aus Raster w×h, vor Bild-Load stabil).
+ */
+export function tileContainerAspectStyle(item, containerWidth, rowHeight) {
+  const gw = item?.w
+  const gh = item?.h
+  if (!gw || !gh || !containerWidth || containerWidth <= 0) return {}
+  const rh = rowHeight ?? squareRowHeightPx(containerWidth)
+  const pxW = itemWidthPx(gw, containerWidth)
+  const pxH = itemHeightPx(gh, rh)
+  if (pxW <= 0 || pxH <= 0) return {}
+  return { aspectRatio: `${pxW} / ${pxH}` }
+}
+
 export function applyInitialGridDimensions(item, containerWidth, rowHeight) {
   const nw = item.naturalWidth
   const nh = item.naturalHeight

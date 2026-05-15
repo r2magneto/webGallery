@@ -33,6 +33,35 @@ export function resizeLenis() {
   lenisRef?.resize?.()
 }
 
+let scheduleResizeRafA = 0
+let scheduleResizeRafB = 0
+
+/**
+ * Lenis-Resize nach Layout-Commit (doppeltes rAF, kein Feuern mitten in Grid-Berechnung).
+ */
+export function scheduleResizeLenis() {
+  if (scheduleResizeRafA) cancelAnimationFrame(scheduleResizeRafA)
+  if (scheduleResizeRafB) cancelAnimationFrame(scheduleResizeRafB)
+  scheduleResizeRafA = requestAnimationFrame(() => {
+    scheduleResizeRafA = 0
+    scheduleResizeRafB = requestAnimationFrame(() => {
+      scheduleResizeRafB = 0
+      resizeLenis()
+    })
+  })
+}
+
+export function cancelScheduledResizeLenis() {
+  if (scheduleResizeRafA) {
+    cancelAnimationFrame(scheduleResizeRafA)
+    scheduleResizeRafA = 0
+  }
+  if (scheduleResizeRafB) {
+    cancelAnimationFrame(scheduleResizeRafB)
+    scheduleResizeRafB = 0
+  }
+}
+
 /**
  * Vertikales Scrollen — nutzt Lenis, falls aktiv, sonst natives window.scrollTo.
  * @param {number} y
