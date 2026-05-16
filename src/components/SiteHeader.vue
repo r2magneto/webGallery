@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
-import { VGA_PALETTE, loadHeaderColorConfig } from '../utils/headerColorConfig.js'
+import { loadHeaderColorConfig, resolvePalette } from '../utils/headerColorConfig.js'
 
 const ANSI_URL = `${import.meta.env.BASE_URL || '/'}Header_01_01_BW.utf8ans`
 
@@ -19,6 +19,7 @@ const rawHeaderText = ref('')
 const headerLines = computed(() => buildHeaderLines(rawHeaderText.value))
 const headerRenderTree = computed(() => buildHeaderRenderTree(headerLines.value))
 const colorCfg = ref(null)
+const palette = computed(() => resolvePalette(colorCfg.value))
 
 const NAV_TARGETS = [
   { key: 'g1', label: 'MOTION CAPTURE' },
@@ -109,9 +110,9 @@ function clsForSeg(seg) {
 function styleForSeg(seg, navKey = null) {
   if (seg.activeTextBand) return {}
   const st = {}
-  if (seg.fgIdx != null) st.color = VGA_PALETTE[seg.fgIdx] ?? undefined
+  if (seg.fgIdx != null) st.color = palette.value[seg.fgIdx] ?? undefined
   if (seg.bgIdx != null && !(navKey && isNavHovered(navKey))) {
-    st.backgroundColor = VGA_PALETTE[seg.bgIdx] ?? undefined
+    st.backgroundColor = palette.value[seg.bgIdx] ?? undefined
   }
   return st
 }

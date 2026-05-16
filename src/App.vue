@@ -91,6 +91,6 @@ function exitEditor() {
       />
     </template>
 
-    <SiteFooter />
+    <SiteFooter :compact-top="!isEditMode && galleryTab === 'list'" />
   </div>
 </template>

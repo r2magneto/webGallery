@@ -2,6 +2,11 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { scheduleResizeLenis } from '../lenisClient.js'
 
+const { compactTop } = defineProps({
+  /** Weniger Abstand oberhalb der Trennlinie (z. B. References/About). */
+  compactTop: { type: Boolean, default: false },
+})
+
 const isLegalOpen = ref(false)
 const footerInnerRef = ref(null)
 const ruleCharCount = ref(72)
@@ -112,7 +117,11 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <footer class="site-footer-root" aria-label="Seitenfuß">
+  <footer
+    class="site-footer-root"
+    :class="{ 'site-footer-root--compact-top': compactTop }"
+    aria-label="Seitenfuß"
+  >
     <div ref="footerInnerRef" class="site-footer-inner w-full px-[10%]">
       <pre class="site-footer-pre site-footer-pre--rule" aria-hidden="true">{{ ruleLine }}</pre>
 
@@ -208,6 +217,10 @@ onBeforeUnmount(() => {
   width: 100%;
   padding: clamp(28px, 5vw, 56px) 0 clamp(32px, 6vw, 72px);
   background: transparent;
+}
+
+.site-footer-root--compact-top {
+  padding-top: clamp(4px, 0.75vw, 10px);
 }
 
 .site-footer-inner {

@@ -25,7 +25,7 @@
       "w": 12,
       "h": 7,
       "src": "/webGallery/images/gallery1/m_Screenshot 2023-04-05 17.05.27_up3.webp",
-      "caption": "VERCE - Digital Fashion Technology"
+      "caption": "VERCE - Digital Fashion Development"
     },
     {
       "i": "m_Screenshot 2026-03-17 11.19.04_ups",
@@ -43,7 +43,7 @@
       "w": 7,
       "h": 6,
       "src": "/webGallery/images/gallery1/bild005.webp",
-      "caption": "Tortuga Games - Character Animations"
+      "caption": "FixGames - Cut Sequences / Capture & Cleanup"
     },
     {
       "i": "bild007",
@@ -150,7 +150,7 @@
       "w": 9,
       "h": 6,
       "src": "/webGallery/images/gallery1/bild024.webp",
-      "caption": "WDR"
+      "caption": "WDR - Hirschhausens Quiz des Menschen / Various Motioncapture Scenes"
     },
     {
       "i": "bild016",
@@ -167,7 +167,8 @@
       "y": 34,
       "w": 7,
       "h": 8,
-      "src": "/webGallery/images/gallery1/m_Screenshot 2020-11-16 13.25.27.webp"
+      "src": "/webGallery/images/gallery1/m_Screenshot 2020-11-16 13.25.27.webp",
+      "caption": "FixGames - Cut Sequences / Capture & Cleanup"
     },
     {
       "i": "bild20",
@@ -184,7 +185,8 @@
       "y": 34,
       "w": 14,
       "h": 8,
-      "src": "/webGallery/images/gallery1/bild017.webp"
+      "src": "/webGallery/images/gallery1/bild017.webp",
+      "caption": "Training Video - Disarming Techniques in Close Protection"
     },
     {
       "i": "bild021",
@@ -209,7 +211,8 @@
       "y": 42,
       "w": 7,
       "h": 9,
-      "src": "/webGallery/images/gallery1/m_Screenshot 2026-03-17 11.14.34_ups.webp"
+      "src": "/webGallery/images/gallery1/m_Screenshot 2026-03-17 11.14.34_ups.webp",
+      "caption": "VR Coaster - Virtual Reality Themepark Experiences / Capture & Cleanup"
     },
     {
       "i": "m_Screenshot 2020-04-23 22.59.05",
@@ -278,12 +281,12 @@
       "src": "/webGallery/images/gallery1/m_DSC06293.webp"
     },
     {
-      "i": "m_DSC07864",
+      "i": "m_DSC04257",
       "x": 11,
       "y": 57,
       "w": 9,
       "h": 6,
-      "src": "/webGallery/images/gallery1/m_DSC07864.webp"
+      "src": "/webGallery/images/gallery1/m_DSC04257.webp"
     },
     {
       "i": "m_vlcsnap-2026-04-27-13h42m03s910_ed",
@@ -291,7 +294,8 @@
       "y": 57,
       "w": 11,
       "h": 8,
-      "src": "/webGallery/images/gallery1/m_vlcsnap-2026-04-27-13h42m03s910_ed.webp"
+      "src": "/webGallery/images/gallery1/m_vlcsnap-2026-04-27-13h42m03s910_ed.webp",
+      "caption": "Tortuga Games / Capture, Cleanup, Retarget"
     },
     {
       "i": "m_vlcsnap-2026-04-27-13h43m55s824_ed",
@@ -315,7 +319,8 @@
       "y": 63,
       "w": 8,
       "h": 7,
-      "src": "/webGallery/images/gallery1/m_Screenshot 2020-11-16 13.26.42.webp"
+      "src": "/webGallery/images/gallery1/m_Screenshot 2020-11-16 13.26.42.webp",
+      "caption": "FixGames - Cut Sequences / Capture & Cleanup"
     },
     {
       "i": "m_DSC03686",
@@ -372,7 +377,8 @@
       "y": 71,
       "w": 6,
       "h": 5,
-      "src": "/webGallery/images/gallery1/m_20170524_103555.webp"
+      "src": "/webGallery/images/gallery1/m_20170524_103555.webp",
+      "caption": "it might seem wierd..    but i enjoy cable management"
     },
     {
       "i": "m_Screenshot 2020-05-05 14.54.38",
@@ -396,7 +402,8 @@
       "y": 77,
       "w": 12,
       "h": 6,
-      "src": "/webGallery/images/gallery1/m_Screenshot 2026-03-13 14.02.07_up3.webp"
+      "src": "/webGallery/images/gallery1/m_Screenshot 2026-03-13 14.02.07_up3.webp",
+      "caption": "The Secret Store - Promotion Video / Animations for Second life Avatars"
     },
     {
       "i": "m_20180604_140633",
@@ -404,7 +411,8 @@
       "y": 77,
       "w": 6,
       "h": 12,
-      "src": "/webGallery/images/gallery1/m_20180604_140633.webp"
+      "src": "/webGallery/images/gallery1/m_20180604_140633.webp",
+      "caption": "CEBIT - Vodafone Moonride / Motioncapture System Installation &  Operation"
     },
     {
       "i": "m_DSC04950",
@@ -573,19 +581,12 @@
       "y": 112,
       "w": 8,
       "h": 5,
-      "src": "/webGallery/images/gallery1/m_20180605_105827.webp"
-    },
-    {
-      "i": "m_20180604_084623",
-      "x": 25,
-      "y": 116,
-      "w": 8,
-      "h": 5,
-      "src": "/webGallery/images/gallery1/m_20180604_084623.webp"
+      "src": "/webGallery/images/gallery1/m_20180605_105827.webp",
+      "caption": "CEBIT - Vodafone Moonride / Motioncapture System Installation &  Operation"
     },
     {
       "i": "m_Screenshot 2026-03-17 11.09.47_upscaled2",
-      "x": 35,
+      "x": 25,
       "y": 116,
       "w": 13,
       "h": 7,
@@ -597,7 +598,8 @@
       "y": 117,
       "w": 11,
       "h": 5,
-      "src": "/webGallery/images/gallery1/m_Screenshot 2026-03-16 17.25.35_upsca.webp"
+      "src": "/webGallery/images/gallery1/m_Screenshot 2026-03-16 17.25.35_upsca.webp",
+      "caption": "Sooii  / Motion Capture, Cleanup, Retarget, Finish2"
     },
     {
       "i": "m_Screenshot 2026-03-17 11.34.54_up",
@@ -606,6 +608,14 @@
       "w": 9,
       "h": 6,
       "src": "/webGallery/images/gallery1/m_Screenshot 2026-03-17 11.34.54_up.webp"
+    },
+    {
+      "i": "vlcsnap-2026-05-04-14h24m57s630",
+      "x": 25,
+      "y": 123,
+      "w": 12,
+      "h": 7,
+      "src": "/webGallery/images/gallery1/vlcsnap-2026-05-04-14h24m57s630.webp"
     }
   ]
 }

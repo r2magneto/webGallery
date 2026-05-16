@@ -10,6 +10,7 @@ import {
 } from 'vue'
 import { GridLayout, GridItem } from 'vue-grid-layout-v3'
 import HeaderColorEditor from './HeaderColorEditor.vue'
+import RefAboutColorEditor from './RefAboutColorEditor.vue'
 import {
   downloadStaticLayoutJson,
   fetchGalleryLayoutItems,
@@ -41,7 +42,7 @@ const props = defineProps({
 /** Standard-Spaltenbreite für neu gescannte Bilder */
 const DEFAULT_SCAN_IMPORT_W = 12
 
-const editorTab = ref('layout') // 'layout' | 'header'
+const editorTab = ref('layout') // 'layout' | 'header' | 'refAbout'
 
 /** Wird aus public/<configPath> geladen. */
 const layout = ref([])
@@ -722,6 +723,14 @@ async function onResetAspect(item) {
         >
           Header
         </button>
+        <button
+          type="button"
+          class="rounded-md px-3 py-1.5 text-xs font-semibold tracking-wide ring-1 ring-white/15"
+          :class="editorTab === 'refAbout' ? 'bg-emerald-600 text-white ring-emerald-400/40' : 'bg-slate-800/40 text-slate-200 hover:bg-slate-700/40'"
+          @click="editorTab = 'refAbout'"
+        >
+          References / About
+        </button>
       </nav>
       <span class="text-xs text-zinc-500" title="Öffentliche Layout-Datei (public/)">
         {{ configPath }}
@@ -753,6 +762,7 @@ async function onResetAspect(item) {
 
     <main class="flex-1 p-4">
       <HeaderColorEditor v-if="editorTab === 'header'" />
+      <RefAboutColorEditor v-else-if="editorTab === 'refAbout'" />
       <template v-else>
       <div
         ref="gridHostRef"
