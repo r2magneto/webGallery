@@ -18,7 +18,7 @@ function isActiveNav(tabKey) {
 const rawHeaderText = ref('')
 const headerLines = computed(() => buildHeaderLines(rawHeaderText.value))
 const headerRenderTree = computed(() => buildHeaderRenderTree(headerLines.value))
-const colorCfg = ref(null)
+const colorCfg = ref(loadHeaderColorConfig())
 const palette = computed(() => resolvePalette(colorCfg.value))
 
 const NAV_TARGETS = [
@@ -527,7 +527,6 @@ function buildHeaderLines(text) {
 
 onMounted(async () => {
   try {
-    colorCfg.value = loadHeaderColorConfig()
     window.addEventListener('storage', () => {
       colorCfg.value = loadHeaderColorConfig()
     })

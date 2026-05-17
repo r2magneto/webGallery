@@ -50,7 +50,9 @@ export async function loadProjectRefAboutColorConfig() {
   }
 }
 
-export async function ensureProjectRefAboutDefaultsLoaded() {
+let ensureLoadedPromise = null
+
+async function ensureProjectRefAboutDefaultsLoadedImpl() {
   const local = loadRefAboutColorConfig()
   if (hasAnyPaint(local)) return local
   const project = await loadProjectRefAboutColorConfig()
@@ -59,6 +61,14 @@ export async function ensureProjectRefAboutDefaultsLoaded() {
     return project
   }
   return local
+}
+
+/** Lädt ref-about-colors.json in localStorage, falls noch keine Farben gesetzt sind. */
+export function ensureProjectRefAboutDefaultsLoaded() {
+  if (!ensureLoadedPromise) {
+    ensureLoadedPromise = ensureProjectRefAboutDefaultsLoadedImpl()
+  }
+  return ensureLoadedPromise
 }
 
 export function importRefAboutColorConfig(jsonLike) {

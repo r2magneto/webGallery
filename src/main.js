@@ -1,5 +1,4 @@
 import { createApp } from 'vue'
-import './cursorVars.js'
 import './style.css'
 import { initLenisSmoothScroll } from './lenisClient.js'
 import { ensureProjectHeaderDefaultsLoaded } from './utils/headerColorConfig.js'
@@ -8,8 +7,13 @@ import App from './App.vue'
 
 initLenisSmoothScroll()
 
-// Project-wide defaults (public/header-colors.json) → localStorage baseline.
-ensureProjectHeaderDefaultsLoaded()
-ensureProjectRefAboutDefaultsLoaded()
+async function bootstrap() {
+  // Farb-JSONs müssen in localStorage stehen, bevor Header/Ref-About rendern.
+  await Promise.all([
+    ensureProjectHeaderDefaultsLoaded(),
+    ensureProjectRefAboutDefaultsLoaded(),
+  ])
+  createApp(App).mount('#app')
+}
 
-createApp(App).mount('#app')
+bootstrap()

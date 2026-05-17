@@ -55,7 +55,9 @@ export async function loadProjectHeaderColorConfig() {
   }
 }
 
-export async function ensureProjectHeaderDefaultsLoaded() {
+let ensureLoadedPromise = null
+
+async function ensureProjectHeaderDefaultsLoadedImpl() {
   const local = loadHeaderColorConfig()
   if (hasAnyPaint(local)) return local
   const project = await loadProjectHeaderColorConfig()
@@ -64,6 +66,14 @@ export async function ensureProjectHeaderDefaultsLoaded() {
     return project
   }
   return local
+}
+
+/** Lädt header-colors.json in localStorage, falls noch keine Farben gesetzt sind. */
+export function ensureProjectHeaderDefaultsLoaded() {
+  if (!ensureLoadedPromise) {
+    ensureLoadedPromise = ensureProjectHeaderDefaultsLoadedImpl()
+  }
+  return ensureLoadedPromise
 }
 
 export function importHeaderColorConfig(jsonLike) {

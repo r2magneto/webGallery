@@ -2,19 +2,19 @@
 
 @font-face {
   font-family: 'Web437 IBM VGA 8x14';
-  src: url('/webGallery/fonts/Web437_IBM_VGA_8x14.woff') format('woff');
+  src: url('../fonts/Web437_IBM_VGA_8x14.woff') format('woff');
   font-display: swap;
 }
 
 @font-face {
   font-family: 'Web437 IBM VGA 8x14 2x';
-  src: url('/webGallery/fonts/Web437_IBM_VGA_8x14-2x.woff') format('woff');
+  src: url('../fonts/Web437_IBM_VGA_8x14-2x.woff') format('woff');
   font-display: swap;
 }
 
 @font-face {
   font-family: 'Web437 IBM VGA 9x16';
-  src: url('/webGallery/fonts/Web437_IBM_VGA_9x16.woff') format('woff');
+  src: url('../fonts/Web437_IBM_VGA_9x16.woff') format('woff');
   font-display: swap;
 }
 
@@ -41,26 +41,26 @@ html.lenis::-webkit-scrollbar {
 }
 
 /*
- * Custom-Cursors (32×32 PNG in public/assets/). Hotspot 16 16.
- * URLs kommen aus src/cursorVars.js (--cursor-*), BASE_URL-kompatibel.
+ * Custom-Cursors: 32×32 PNG liegen nach dem Build im selben Ordner wie diese CSS-Datei.
+ * Hotspot 16 16 = Bildmitte.
  */
 .cursor-up {
-  cursor: var(--cursor-up);
+  cursor: url('./cur_up.png') 16 16, n-resize;
 }
 .cursor-dn {
-  cursor: var(--cursor-dn);
+  cursor: url('./cur_dn.png') 16 16, s-resize;
 }
 .cursor-left {
-  cursor: var(--cursor-left);
+  cursor: url('./cur_l.png') 16 16, w-resize;
 }
 .cursor-right {
-  cursor: var(--cursor-right);
+  cursor: url('./cur_r.png') 16 16, e-resize;
 }
 .cursor-close {
-  cursor: var(--cursor-close);
+  cursor: url('./cur_x.png') 16 16, pointer;
 }
 .cursor-thumb {
-  cursor: var(--cursor-thumb);
+  cursor: url('./cur_v.png') 16 16, pointer;
 }
 
 @keyframes hueCycle {
