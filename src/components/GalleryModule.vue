@@ -68,10 +68,38 @@ const gridRowHeight = computed(() =>
   squareRowHeightPx(gridHostWidth.value || 960),
 )
 
+/**
+ * vue-grid-layout aktualisiert bei rowHeight-Wechsel die Items, ruft aber nicht immer
+ * die Container-Höhen-Neuberechnung auf (nur bei Breite/Margin). Window-resize triggert das.
+ */
+function nudgeVueGridLayoutRemeasure() {
+  window.dispatchEvent(new Event('resize'))
+}
+
 function notifyLenisAfterGridSettled() {
   nextTick(() => {
+    nudgeVueGridLayoutRemeasure()
     scheduleResizeLenis()
   })
+}
+
+let gridLayoutHeightObserver = null
+
+function bindGridLayoutHeightObserver() {
+  gridLayoutHeightObserver?.disconnect()
+  gridLayoutHeightObserver = null
+  const gridEl = gridHostRef.value?.querySelector('.vue-grid-layout')
+  if (!gridEl || typeof ResizeObserver === 'undefined') return
+  gridLayoutHeightObserver = new ResizeObserver(() => {
+    scheduleResizeLenis()
+  })
+  gridLayoutHeightObserver.observe(gridEl)
+}
+
+function onGridLayoutReady() {
+  nudgeVueGridLayoutRemeasure()
+  notifyLenisAfterGridSettled()
+  bindGridLayoutHeightObserver()
 }
 
 const gridHostWidthObserver = createGridHostWidthObserver({
@@ -85,6 +113,7 @@ function bindGridHostResizeObserver() {
   const el = gridHostRef.value
   if (!el) return
   gridHostWidthObserver.bind(el, el.offsetWidth)
+  nextTick(() => bindGridLayoutHeightObserver())
 }
 
 function tileMediaStyle(item) {
@@ -689,6 +718,10 @@ watch(gridHostRef, (el) => {
   if (el) nextTick(() => bindGridHostResizeObserver())
 })
 
+watch(gridRowHeight, () => {
+  notifyLenisAfterGridSettled()
+})
+
 watch(viewerMode, (m) => {
   if (m === 'idle') lbCaptionFastHide.value = false
 })
@@ -727,6 +760,8 @@ onBeforeUnmount(() => {
   clearCaptionFadeBeforeCloseTimer()
   window.removeEventListener('keydown', onLightboxKeydown)
   gridHostWidthObserver.disconnect()
+  gridLayoutHeightObserver?.disconnect()
+  gridLayoutHeightObserver = null
   cancelScheduledResizeLenis()
 })
 </script>
@@ -780,6 +815,7 @@ onBeforeUnmount(() => {
         :use-css-transforms="true"
         :use-style-cursor="false"
         class="viewer-grid w-full"
+        @layout-ready="onGridLayoutReady"
       >
         <GridItem
           v-for="(item, index) in layout"
@@ -1178,11 +1214,11 @@ onBeforeUnmount(() => {
 }
 
 .lb-caption-overlay-inner {
-  padding: 5px 14px;
-  border-radius: 8px;
+  padding: 2px 6px;
+  border-radius: 2px;
   text-align: left;
-  font-size: 0.875rem;
-  line-height: 1.4;
+  font-size: 10px;
+  line-height: 1.3;
   color: #fafafa;
   white-space: pre-wrap;
   word-break: break-word;
@@ -1192,7 +1228,7 @@ onBeforeUnmount(() => {
     rgb(0 0 0 / 0.5) 50%,
     rgb(0 0 0 / 0.28) 100%
   );
-  box-shadow: 0 2px 16px rgb(0 0 0 / 0.3);
+  box-shadow: 0 1px 6px rgb(0 0 0 / 0.25);
 }
 
 .lb-caption-overlay--fast-hide {
