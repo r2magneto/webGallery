@@ -3,7 +3,7 @@
  * URLs enthalten import.meta.env.BASE_URL (z. B. `/webGallery/layout.json` auf GitHub Pages).
  */
 import { imagesBasePathForLayoutConfig } from './config/galleryPaths.js'
-import { publicAssetUrl } from './utils/publicAssetUrl.js'
+import { cacheBustUrl, publicAssetUrl } from './utils/publicAssetUrl.js'
 
 const ALLOWED_LAYOUT_BASENAMES = new Set(['layout.json', 'layout2.json'])
 
@@ -43,7 +43,7 @@ export async function fetchGalleryLayoutItems(configFile = 'layout.json') {
   const url = layoutPublicUrl(configFile)
   let res
   try {
-    res = await fetch(url)
+    res = await fetch(cacheBustUrl(url))
   } catch {
     return []
   }
@@ -83,7 +83,7 @@ export async function fetchManifestFilenames(configPath) {
   }
 
   const base = imagesBasePathForLayoutConfig(configPath)
-  const url = `${base}manifest.json?v=${Date.now()}`
+  const url = cacheBustUrl(`${base}manifest.json`)
   try {
     const res = await fetch(url)
     if (!res.ok) return []

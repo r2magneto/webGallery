@@ -15,3 +15,10 @@ export function publicAssetUrl(relativePath) {
   const trimmed = String(relativePath ?? '').replace(/^\/+/, '')
   return `${viteBase()}${trimmed}`
 }
+
+/** Verhindert Browser-Cache für statische JSON (gleicher Dateiname). */
+export function cacheBustUrl(url) {
+  const u = String(url ?? '')
+  const sep = u.includes('?') ? '&' : '?'
+  return `${u}${sep}t=${Date.now()}`
+}

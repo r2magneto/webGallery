@@ -1,6 +1,6 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { scheduleResizeLenis } from '../lenisClient.js'
+import { scheduleResizeLenis, scrollWindowToBottom } from '../lenisClient.js'
 
 const { compactTop } = defineProps({
   /** Weniger Abstand oberhalb der Trennlinie (z. B. References/About). */
@@ -92,9 +92,18 @@ function onPhoneClick() {
   window.location.href = `tel:+49${'177'}${phoneSuffix}`
 }
 
-watch(isLegalOpen, () => {
+function scrollToLegalPanel() {
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      scrollWindowToBottom()
+    })
+  })
+}
+
+watch(isLegalOpen, (open) => {
   nextTick(() => {
     scheduleResizeLenis()
+    if (open) scrollToLegalPanel()
   })
 })
 
@@ -122,7 +131,7 @@ onBeforeUnmount(() => {
     :class="{ 'site-footer-root--compact-top': compactTop }"
     aria-label="Seitenfuß"
   >
-    <div ref="footerInnerRef" class="site-footer-inner w-full px-[10%]">
+    <div ref="footerInnerRef" class="site-footer-inner w-full px-[9%]">
       <pre class="site-footer-pre site-footer-pre--rule" aria-hidden="true">{{ ruleLine }}</pre>
 
       <div class="site-footer-bar">
@@ -215,12 +224,12 @@ onBeforeUnmount(() => {
   position: relative;
   z-index: 20;
   width: 100%;
-  padding: clamp(28px, 5vw, 56px) 0 clamp(32px, 6vw, 72px);
+  padding: clamp(25px, 4.5vw, 50px) 0 clamp(29px, 5.4vw, 65px);
   background: transparent;
 }
 
 .site-footer-root--compact-top {
-  padding-top: clamp(4px, 0.75vw, 10px);
+  padding-top: clamp(4px, 0.68vw, 9px);
 }
 
 .site-footer-inner {
@@ -230,13 +239,13 @@ onBeforeUnmount(() => {
 }
 
 .site-footer-pre {
-  margin: 0 0 clamp(10px, 1.6vw, 16px);
+  margin: 0 0 clamp(9px, 1.44vw, 14px);
   white-space: pre;
   max-width: 100%;
   box-sizing: border-box;
   font-family: 'Web437 IBM VGA 9x16', 'Web437 IBM VGA 8x14 2x',
     'Web437 IBM VGA 8x14', ui-monospace, monospace;
-  font-size: clamp(11px, 1.7vw, 22px);
+  font-size: clamp(10px, 1.5vw, 20px);
   line-height: 0.99;
   letter-spacing: -0.5px;
   color: #6b7280;
@@ -255,7 +264,7 @@ onBeforeUnmount(() => {
 }
 
 .legal-box {
-  margin-top: clamp(12px, 2vw, 20px);
+  margin-top: clamp(11px, 1.8vw, 18px);
   color: #9ca3af;
 }
 
@@ -310,11 +319,11 @@ onBeforeUnmount(() => {
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: clamp(8px, 1.2vw, 12px);
+  gap: clamp(7px, 1.08vw, 11px);
   font-family: 'Web437 IBM VGA 9x16', 'Web437 IBM VGA 8x14 2x',
     'Web437 IBM VGA 8x14', ui-monospace, monospace;
-  font-size: clamp(11px, 1.7vw, 22px);
-  line-height: 1.2;
+  font-size: clamp(10px, 1.5vw, 20px);
+  line-height: 1.08;
   letter-spacing: -0.5px;
 }
 

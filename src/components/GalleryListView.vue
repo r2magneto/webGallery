@@ -1,9 +1,11 @@
 <script setup>
-import { computed, nextTick, onMounted, ref } from 'vue'
+import { computed, nextTick, onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import { buildPlainAnsiLines } from '../utils/ansiPlainRender.js'
 import { loadRefAboutColorConfig, resolvePalette } from '../utils/refAboutColorConfig.js'
 import { decodeBestEffort } from '../utils/utf8ansDecode.js'
 import { scheduleResizeLenis } from '../lenisClient.js'
+import { useGasPedalScroll } from '../composables/useGasPedalScroll.js'
+import GalleryScrollbar from './GalleryScrollbar.vue'
 
 const ANSI_URL = `${import.meta.env.BASE_URL || '/'}ref-about_01_BW.utf8ans`
 
@@ -11,9 +13,33 @@ const loadState = ref('loading')
 const error = ref('')
 const rawText = ref('')
 const colorCfg = ref(loadRefAboutColorConfig())
+const shellRef = ref(null)
 
 const palette = computed(() => resolvePalette(colorCfg.value))
 const ansiLines = computed(() => buildPlainAnsiLines(rawText.value, colorCfg.value))
+
+const scrollbarActive = computed(
+  () => loadState.value === 'idle' && !error.value && rawText.value.length > 0,
+)
+
+function isRefAboutScrollTarget(target) {
+  if (!(target instanceof Element)) return false
+  const shell = shellRef.value
+  if (!(shell instanceof HTMLElement) || !shell.contains(target)) return false
+  if (target.closest('button, a, input, textarea, select, label')) return false
+  return true
+}
+
+const {
+  shellCursorClass,
+  onShellPointerDown,
+  onShellPointerMove,
+  onShellPointerLeave,
+} = useGasPedalScroll({
+  shellRef,
+  isEnabled: () => loadState.value === 'idle' && !error.value,
+  isScrollTarget: isRefAboutScrollTarget,
+})
 
 function clsForSeg(seg) {
   return {
@@ -44,22 +70,61 @@ async function loadArt() {
       e instanceof Error ? e.message : 'ASCII-Grafik konnte nicht geladen werden.'
   } finally {
     loadState.value = 'idle'
-    nextTick(() => scheduleResizeLenis())
+    nextTick(() => {
+      syncRefAboutCanvasLayout()
+      scheduleResizeLenis()
+    })
   }
+}
+
+/** transform:scale lässt unten Leerraum — Margin zieht Layout an die sichtbare Höhe. */
+function syncRefAboutCanvasLayout() {
+  const canvas = shellRef.value?.querySelector('.ref-about-canvas')
+  const pre = canvas?.querySelector('.ref-about-pre')
+  if (!(canvas instanceof HTMLElement) || !(pre instanceof HTMLElement)) return
+
+  const layoutH = pre.offsetHeight
+  const scale = Number.parseFloat(getComputedStyle(canvas).getPropertyValue('--ansi-scale')) || 1
+  if (layoutH <= 0 || scale >= 1) {
+    canvas.style.marginBottom = ''
+    return
+  }
+  canvas.style.marginBottom = `${-layoutH * (1 - scale)}px`
 }
 
 onMounted(() => {
   window.addEventListener('storage', () => {
     colorCfg.value = loadRefAboutColorConfig()
-    nextTick(() => scheduleResizeLenis())
+    nextTick(() => {
+      syncRefAboutCanvasLayout()
+      scheduleResizeLenis()
+    })
   })
+  window.addEventListener('resize', syncRefAboutCanvasLayout, { passive: true })
   loadArt()
+})
+
+watch([ansiLines, loadState], () => {
+  nextTick(() => syncRefAboutCanvasLayout())
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', syncRefAboutCanvasLayout)
 })
 </script>
 
 <template>
-  <div class="ref-about-root" aria-label="References and about">
-    <div class="ref-about-wrap w-full px-[10%] pb-0 pt-2">
+  <GalleryScrollbar :active="scrollbarActive" />
+  <div
+    ref="shellRef"
+    class="ref-about-root ref-about-shell"
+    :class="shellCursorClass"
+    aria-label="References and about"
+    @pointerdown="onShellPointerDown"
+    @pointermove="onShellPointerMove"
+    @pointerleave="onShellPointerLeave"
+  >
+    <div class="ref-about-wrap w-full px-[9%] pb-0 pt-[0.45rem]">
       <p v-if="loadState === 'loading'" class="ref-about-status">Lade Grafik …</p>
       <p v-else-if="error" class="ref-about-status ref-about-status--error">{{ error }}</p>
 
@@ -85,6 +150,12 @@ onMounted(() => {
   color: #ffffff;
 }
 
+.ref-about-pre,
+.ref-about-pre *,
+.ref-about-status {
+  cursor: inherit;
+}
+
 .ref-about-wrap {
   max-width: 100%;
   margin: 0 auto;
@@ -94,7 +165,7 @@ onMounted(() => {
   margin: 0;
   font-family: 'Web437 IBM VGA 9x16', 'Web437 IBM VGA 8x14 2x',
     'Web437 IBM VGA 8x14', ui-monospace, monospace;
-  font-size: clamp(11px, 1.55vw, 20px);
+  font-size: clamp(10px, 1.4vw, 18px);
   color: #aaaaaa;
 }
 
@@ -106,7 +177,8 @@ onMounted(() => {
   display: flex;
   justify-content: center;
   overflow-x: auto;
-  --ansi-scale: clamp(1, calc(0.85 + 0.00035 * 100vw), 1.35);
+  overflow-y: hidden;
+  --ansi-scale: clamp(0.9, calc(0.76 + 0.00032 * 100vw), 1.22);
   transform: scale(var(--ansi-scale));
   transform-origin: top center;
 }
@@ -116,7 +188,7 @@ onMounted(() => {
   white-space: pre;
   font-family: 'Web437 IBM VGA 9x16', 'Web437 IBM VGA 8x14 2x',
     'Web437 IBM VGA 8x14', ui-monospace, monospace;
-  font-size: clamp(11px, 1.55vw, 20px);
+  font-size: clamp(10px, 1.4vw, 18px);
   line-height: 0.99;
   letter-spacing: -0.5px;
   color: #e5e7eb;

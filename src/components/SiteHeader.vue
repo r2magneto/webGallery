@@ -597,8 +597,8 @@ onMounted(async () => {
   width: 100%;
   display: flex;
   justify-content: center;
-  padding: clamp(10px, 2.2vw, 20px) clamp(8px, 1.6vw, 14px)
-    clamp(8px, 1.4vw, 14px);
+  padding: clamp(8px, 1.8vw, 16px) clamp(8px, 1.6vw, 14px)
+    clamp(6px, 1.2vw, 12px);
   transform: translateZ(0);
 }
 
@@ -610,7 +610,7 @@ onMounted(async () => {
   justify-content: center;
   overflow: hidden;
   /* Ziel: ~120% Standard, reagiert spürbar auf Fensterbreite */
-  --ansi-scale: clamp(1, calc(0.85 + 0.00035 * 100vw), 1.35);
+  --ansi-scale: clamp(0.9, calc(0.76 + 0.00032 * 100vw), 1.22);
   transform: scale(var(--ansi-scale));
   transform-origin: top center;
 }
@@ -635,7 +635,7 @@ onMounted(async () => {
   font-family: 'Web437 IBM VGA 9x16', 'Web437 IBM VGA 8x14 2x',
     'Web437 IBM VGA 8x14', ui-monospace, monospace;
   /* reacts to window width */
-  font-size: clamp(11px, 1.7vw, 22px);
+  font-size: clamp(10px, 1.5vw, 20px);
   /* unitless: scales with font-size; slight overlap to hide hairlines */
   line-height: 0.99;
   letter-spacing: -0.5px;
@@ -751,16 +751,20 @@ onMounted(async () => {
 
 /* Hover via Vue-State (hoveredNavKey) — alle 4 Zeilen gleichzeitig */
 .header-btn-row--hovered {
-  background-color: #2a2a2a !important;
+  background-color: v-bind('ACTIVE_TEXT_BAND_BG') !important;
 }
 
 .header-btn-row--hovered .ansi-seg,
 .header-nav-seg--hovered {
+  color: #000000 !important;
   background-color: transparent !important;
+  animation: none !important;
+  filter: none !important;
 }
 
 .header-btn-row--hovered .active-text-band {
-  color: #facc15 !important;
+  color: #000000 !important;
+  background-color: transparent !important;
   animation: none !important;
   filter: none !important;
 }

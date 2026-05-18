@@ -77,6 +77,29 @@ export function scrollWindowToY(y, options = {}) {
   }
 }
 
+/**
+ * Ganz nach unten scrollen (Lenis-Smooth-Scroll oder natives smooth scrollTo).
+ * @param {object} [options] Lenis scrollTo-Optionen; ohne `immediate` = weich.
+ */
+export function scrollWindowToBottom(options = {}) {
+  const L = lenisRef
+  if (L) {
+    L.resize?.()
+    const max = L.dimensions?.limit?.y ?? 0
+    L.scrollTo(max, options)
+    return
+  }
+  const top = Math.max(
+    0,
+    document.documentElement.scrollHeight - window.innerHeight,
+  )
+  window.scrollTo({
+    top,
+    left: 0,
+    behavior: options.immediate ? 'auto' : 'smooth',
+  })
+}
+
 export function destroyLenisSmoothScroll() {
   if (!lenisRef) return
   lenisRef.destroy()

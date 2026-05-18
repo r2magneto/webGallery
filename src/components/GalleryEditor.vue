@@ -435,7 +435,7 @@ onBeforeUnmount(() => {
 })
 
 function layoutPayload() {
-  const items = layout.value.map((it) => {
+  return layout.value.map((it) => {
     const { x, y, w, h, i, src, caption } = it
     const o = {
       i,
@@ -449,19 +449,42 @@ function layoutPayload() {
     if (c) o.caption = caption.trim()
     return o
   })
+}
 
-  // Leserichtung: primär nach Zeile (y gerundet), sekundär nach Spalte (x)
-  items.sort((a, b) => {
-    const ay = Math.round(Number(a.y) || 0)
-    const by = Math.round(Number(b.y) || 0)
-    if (ay !== by) return ay - by
-    const ax = Number(a.x) || 0
-    const bx = Number(b.x) || 0
-    if (ax !== bx) return ax - bx
-    return String(a.i).localeCompare(String(b.i))
-  })
+function layoutIndexForItem(item) {
+  return layout.value.findIndex((it) => it.i === item?.i)
+}
 
-  return items
+function layoutOrderLabel(item) {
+  const idx = layoutIndexForItem(item)
+  return idx === -1 ? '—' : String(idx + 1)
+}
+
+function canMoveLayoutEarlier(item) {
+  return layoutIndexForItem(item) > 0
+}
+
+function canMoveLayoutLater(item) {
+  const idx = layoutIndexForItem(item)
+  return idx >= 0 && idx < layout.value.length - 1
+}
+
+function swapLayoutWithNeighbor(item, direction) {
+  const idx = layoutIndexForItem(item)
+  if (idx === -1) return
+  const next = idx + direction
+  if (next < 0 || next >= layout.value.length) return
+  const arr = layout.value
+  ;[arr[idx], arr[next]] = [arr[next], arr[idx]]
+  syncGridLayoutMirror()
+}
+
+function onMoveLayoutEarlier(item) {
+  swapLayoutWithNeighbor(item, -1)
+}
+
+function onMoveLayoutLater(item) {
+  swapLayoutWithNeighbor(item, 1)
 }
 
 function openCaptionEditor(item) {
@@ -809,6 +832,39 @@ async function onResetAspect(item) {
                   :alt="item.i"
                   class="h-full w-full object-cover"
                 />
+              </div>
+              <div
+                class="editor-order-controls pointer-events-none absolute left-1/2 top-1.5 z-30 flex -translate-x-1/2 items-center gap-0.5 rounded-md bg-slate-900/92 px-1 py-0.5 shadow-lg ring-1 ring-white/25"
+                aria-label="Lightbox-Reihenfolge"
+              >
+                <button
+                  type="button"
+                  class="editor-order-btn pointer-events-auto flex h-7 w-7 items-center justify-center rounded text-base font-bold leading-none text-slate-100 opacity-0 transition-opacity hover:bg-slate-700 hover:text-white focus:opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 group-hover:opacity-100 disabled:pointer-events-none disabled:opacity-0"
+                  :disabled="!canMoveLayoutEarlier(item)"
+                  title="In der Lightbox-Reihenfolge nach vorne"
+                  aria-label="Lightbox-Reihenfolge: einen Schritt nach vorne"
+                  @pointerdown.stop
+                  @mousedown.stop
+                  @click.stop="onMoveLayoutEarlier(item)"
+                >
+                  −
+                </button>
+                <span
+                  class="pointer-events-none min-w-[1.75rem] px-0.5 text-center text-sm font-bold tabular-nums text-yellow-400"
+                  :title="`Lightbox-Position ${layoutOrderLabel(item)} von ${layout.length}`"
+                >{{ layoutOrderLabel(item) }}</span>
+                <button
+                  type="button"
+                  class="editor-order-btn pointer-events-auto flex h-7 w-7 items-center justify-center rounded text-base font-bold leading-none text-slate-100 opacity-0 transition-opacity hover:bg-slate-700 hover:text-white focus:opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 group-hover:opacity-100 disabled:pointer-events-none disabled:opacity-0"
+                  :disabled="!canMoveLayoutLater(item)"
+                  title="In der Lightbox-Reihenfolge nach hinten"
+                  aria-label="Lightbox-Reihenfolge: einen Schritt nach hinten"
+                  @pointerdown.stop
+                  @mousedown.stop
+                  @click.stop="onMoveLayoutLater(item)"
+                >
+                  +
+                </button>
               </div>
               <div
                 class="pointer-events-none absolute inset-0 opacity-0 outline outline-[4px] outline-yellow-400 transition-opacity duration-[2000ms] ease-out group-hover:opacity-100 group-hover:!duration-0"

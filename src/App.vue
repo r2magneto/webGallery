@@ -1,5 +1,5 @@
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref } from 'vue'
 import SiteHeader from './components/SiteHeader.vue'
 import GalleryModule from './components/GalleryModule.vue'
 import GalleryEditor from './components/GalleryEditor.vue'
@@ -15,32 +15,9 @@ const EDITOR_PASSWORD = 'admin123'
 const galleryTab = ref('g1')
 const isEditMode = ref(false)
 
-const scrollByConfig = reactive({
-  [CONFIG_G1]: 0,
-  [CONFIG_G2]: 0,
-})
-
 const editorConfigPath = ref(CONFIG_G1)
 
-function onModuleSaveScroll(payload) {
-  if (
-    payload?.configPath &&
-    typeof payload.scrollY === 'number' &&
-    (payload.configPath === CONFIG_G1 || payload.configPath === CONFIG_G2)
-  ) {
-    scrollByConfig[payload.configPath] = payload.scrollY
-  }
-}
-
-function saveScrollForCurrentGalleryPreview() {
-  if (galleryTab.value === 'g1') scrollByConfig[CONFIG_G1] = window.scrollY
-  else if (galleryTab.value === 'g2') scrollByConfig[CONFIG_G2] = window.scrollY
-}
-
 function onSelectGallery(tab) {
-  if (!isEditMode.value) {
-    saveScrollForCurrentGalleryPreview()
-  }
   isEditMode.value = false
   galleryTab.value = tab
 }
@@ -78,16 +55,12 @@ function exitEditor() {
         v-else-if="galleryTab === 'g1'"
         :key="CONFIG_G1"
         :config-path="CONFIG_G1"
-        :initial-scroll-y="scrollByConfig[CONFIG_G1] ?? 0"
-        @save-scroll="onModuleSaveScroll"
       />
 
       <GalleryModule
         v-else-if="galleryTab === 'g2'"
         :key="CONFIG_G2"
         :config-path="CONFIG_G2"
-        :initial-scroll-y="scrollByConfig[CONFIG_G2] ?? 0"
-        @save-scroll="onModuleSaveScroll"
       />
     </template>
 

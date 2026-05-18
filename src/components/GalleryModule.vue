@@ -23,6 +23,7 @@ import {
 } from '../utils/gridAspect.js'
 import { createGridHostWidthObserver } from '../utils/gridHostResize.js'
 import GalleryScrollbar from './GalleryScrollbar.vue'
+import { useGasPedalScroll } from '../composables/useGasPedalScroll.js'
 
 const props = defineProps({
   /** Layout-JSON im public-Ordner (z. B. layout.json). */
@@ -30,14 +31,7 @@ const props = defineProps({
     type: String,
     default: 'layout.json',
   },
-  /** Gespeicherter Fenster-Scroll für diese Galerie (px). */
-  initialScrollY: {
-    type: Number,
-    default: 0,
-  },
 })
-
-const emit = defineEmits(['saveScroll'])
 
 /** Padding: 4 % links/rechts; oben/unten je 0,5 % Bandhöhe (2× → ~99 % Bildhöhe) */
 const LB_PAD_X_FRAC = 0.04
@@ -182,199 +176,7 @@ function escapeAttrSelectorValue(s) {
   return String(s).replace(/\\/g, '\\\\').replace(/"/g, '\\"')
 }
 
-/** „Gaspedal“: Hintergrund festhalten → sanft beschleunigen / nach Loslassen auslaufen */
 const gridShellRef = ref(null)
-/** Leer oder globale Cursor-Klasse (.cursor-up / .cursor-dn) für Grid-Hintergrund */
-const gridShellCursorClass = ref('')
-const gasPedalHeld = ref(false)
-let lastCursorClientY = window.innerHeight * 0.5
-let cursorIsOverBackground = false
-let wheelCursorOverrideUntil = 0
-let wheelCursorOverrideTimer = 0
-
-function setWheelCursorOverride(dir) {
-  if (!cursorIsOverBackground) return
-  gridShellCursorClass.value = dir === 'down' ? 'cursor-dn' : 'cursor-up'
-  wheelCursorOverrideUntil = Date.now() + 450
-  if (wheelCursorOverrideTimer) window.clearTimeout(wheelCursorOverrideTimer)
-  wheelCursorOverrideTimer = window.setTimeout(() => {
-    wheelCursorOverrideTimer = 0
-    wheelCursorOverrideUntil = 0
-    // zurück zu Mausposition
-    gridShellCursorClass.value =
-      lastCursorClientY < window.innerHeight * 0.5 ? 'cursor-up' : 'cursor-dn'
-  }, 480)
-}
-
-function onWindowWheelCursorHint(e) {
-  if (lightboxOpen.value) return
-  if (!layout.value.length || loadState.value !== 'idle') return
-  const t = e.target
-  if (!isGasPedalBackgroundTarget(t)) return
-  // deltaY > 0 = nach unten scrollen
-  const dy = Number(e.deltaY) || 0
-  if (dy === 0) return
-  setWheelCursorOverride(dy > 0 ? 'down' : 'up')
-}
-
-let gasVelPxPerSec = 0
-let gasRafId = 0
-let gasLastTs = 0
-let gasPointerId = -1
-let lastGasClientY = 0
-/** Max. Scrollgeschwindigkeit (px/s) am oberen/unteren Bildschirmrand */
-const GAS_MAX_PX_PER_SEC = 2600
-/** Soll-Geschwindigkeit (px/s) folgt Mausposition; Lenis glättet wie beim Mausrad (kein immediate). */
-const GAS_VEL_LERP_PER_S = 10
-
-function isGasPedalBackgroundTarget(target) {
-  if (!(target instanceof Element)) return false
-  if (target.closest('.viewer-tile-btn')) return false
-  if (target.closest('button, a, input, textarea, select, label')) return false
-  if (target.closest('[contenteditable="true"]')) return false
-  return true
-}
-
-function rawGasDesiredVelocityPxPerSec(clientY) {
-  const h = window.innerHeight
-  if (h <= 0) return 0
-  const half = h * 0.5
-  const norm = Math.max(-1, Math.min(1, (clientY - half) / half))
-  return norm * GAS_MAX_PX_PER_SEC
-}
-
-function gasPedalFrame(ts) {
-  gasRafId = 0
-  const lenis = getLenis()
-  if (!lenis) return
-
-  const dt =
-    gasLastTs > 0 ? Math.min(0.055, Math.max(0.001, (ts - gasLastTs) / 1000)) : 1 / 60
-  gasLastTs = ts
-
-  const desired = gasPedalHeld.value
-    ? rawGasDesiredVelocityPxPerSec(lastGasClientY)
-    : 0
-  const alpha = 1 - Math.exp(-GAS_VEL_LERP_PER_S * dt)
-  gasVelPxPerSec += (desired - gasVelPxPerSec) * alpha
-
-  const limit = lenis.limit
-  const delta = gasVelPxPerSec * dt
-  let newTarget = lenis.targetScroll + delta
-  if (newTarget < 0 && gasVelPxPerSec < 0) {
-    newTarget = 0
-    gasVelPxPerSec = 0
-  } else if (newTarget > limit && gasVelPxPerSec > 0) {
-    newTarget = limit
-    gasVelPxPerSec = 0
-  }
-
-  const { lerp, duration, easing } = lenis.options
-  lenis.scrollTo(newTarget, {
-    programmatic: false,
-    lerp,
-    duration,
-    easing,
-  })
-
-  const coasting = Math.abs(gasVelPxPerSec) > 1.5
-  if (gasPedalHeld.value || coasting) {
-    gasRafId = requestAnimationFrame(gasPedalFrame)
-  } else {
-    gasVelPxPerSec = 0
-    gasLastTs = 0
-  }
-}
-
-function ensureGasPedalLoop() {
-  if (!gasRafId) {
-    gasLastTs = 0
-    gasRafId = requestAnimationFrame(gasPedalFrame)
-  }
-}
-
-function stopGasPedalLoop() {
-  if (gasRafId) {
-    cancelAnimationFrame(gasRafId)
-    gasRafId = 0
-  }
-  gasLastTs = 0
-  gasVelPxPerSec = 0
-}
-
-function onGasPedalPointerMove(e) {
-  if (!gasPedalHeld.value || e.pointerId !== gasPointerId) return
-  lastGasClientY = e.clientY
-  updateGridShellBackgroundCursor(e)
-}
-
-function onGasPedalPointerUp(e) {
-  if (e.pointerId !== gasPointerId) return
-  gasPedalHeld.value = false
-  gasPointerId = -1
-  try {
-    gridShellRef.value?.releasePointerCapture(e.pointerId)
-  } catch (_) {
-    /* noop */
-  }
-  window.removeEventListener('pointermove', onGasPedalPointerMove, true)
-  window.removeEventListener('pointerup', onGasPedalPointerUp, true)
-  window.removeEventListener('pointercancel', onGasPedalPointerUp, true)
-  if (!gasRafId && Math.abs(gasVelPxPerSec) > 1.5) {
-    ensureGasPedalLoop()
-  }
-}
-
-function onGridShellPointerDownGas(e) {
-  if (e.button !== 0 || e.pointerType !== 'mouse') return
-  if (!layout.value.length || loadState.value !== 'idle') return
-  if (lightboxOpen.value) return
-  const t = e.target
-  if (!isGasPedalBackgroundTarget(t)) return
-
-  e.preventDefault()
-
-  gasPointerId = e.pointerId
-  lastGasClientY = e.clientY
-  gasPedalHeld.value = true
-  updateGridShellBackgroundCursor(e)
-
-  try {
-    if (gridShellRef.value instanceof HTMLElement) {
-      gridShellRef.value.setPointerCapture(e.pointerId)
-    }
-  } catch (_) {
-    /* noop */
-  }
-
-  window.addEventListener('pointermove', onGasPedalPointerMove, true)
-  window.addEventListener('pointerup', onGasPedalPointerUp, true)
-  window.addEventListener('pointercancel', onGasPedalPointerUp, true)
-
-  ensureGasPedalLoop()
-}
-
-function updateGridShellBackgroundCursor(e) {
-  const t = e.target
-  if (t instanceof Element && t.closest('.viewer-tile-btn')) {
-    gridShellCursorClass.value = ''
-    cursorIsOverBackground = false
-    return
-  }
-  cursorIsOverBackground = isGasPedalBackgroundTarget(t)
-  lastCursorClientY = e.clientY
-  if (Date.now() < wheelCursorOverrideUntil) return
-  gridShellCursorClass.value =
-    e.clientY < window.innerHeight * 0.5 ? 'cursor-up' : 'cursor-dn'
-}
-
-function onGridShellPointerMoveCursor(e) {
-  updateGridShellBackgroundCursor(e)
-}
-
-function onGridShellPointerLeaveCursor() {
-  if (!gasPedalHeld.value) gridShellCursorClass.value = ''
-}
 
 /** Lightbox ↔ Grid: aktives Thumbnail vertikal in den Viewport zentrieren (Zoom-Back trifft sichtbare Kachel). */
 function scrollThumbnailIntoViewCentered(index) {
@@ -815,21 +617,26 @@ const galleryScrollbarActive = computed(
     !lightboxOpen.value,
 )
 
+const {
+  shellCursorClass: gridShellCursorClass,
+  onShellPointerDown: onGridShellPointerDownGas,
+  onShellPointerMove: onGridShellPointerMoveCursor,
+  onShellPointerLeave: onGridShellPointerLeaveCursor,
+} = useGasPedalScroll({
+  shellRef: gridShellRef,
+  isEnabled: () =>
+    layout.value.length > 0 &&
+    loadState.value === 'idle' &&
+    !lightboxOpen.value,
+  cursorClearSelector: '.viewer-tile-btn',
+})
+
 const lightboxBackdropStyle = computed(() => ({
   opacity: lbBackdropOpacity.value,
   transitionProperty: 'opacity',
   transitionDuration: `${MORPH_CLOSE_FADE_MS}ms`,
   transitionTimingFunction: 'ease-out',
 }))
-
-function restoreInitialScroll() {
-  const top = Math.max(0, props.initialScrollY)
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      scrollWindowToY(top, { immediate: true })
-    })
-  })
-}
 
 async function loadGalleryFromConfig() {
   lightboxIndex.value = null
@@ -867,17 +674,14 @@ async function loadGalleryFromConfig() {
 
 onMounted(async () => {
   await loadGalleryFromConfig()
-  restoreInitialScroll()
 
   window.addEventListener('keydown', onLightboxKeydown)
-  window.addEventListener('wheel', onWindowWheelCursorHint, { passive: true })
 })
 
 watch(
   () => props.configPath,
   async () => {
     await loadGalleryFromConfig()
-    restoreInitialScroll()
   },
 )
 
@@ -918,18 +722,6 @@ watch(
 )
 
 onBeforeUnmount(() => {
-  gasPedalHeld.value = false
-  stopGasPedalLoop()
-  window.removeEventListener('pointermove', onGasPedalPointerMove, true)
-  window.removeEventListener('pointerup', onGasPedalPointerUp, true)
-  window.removeEventListener('pointercancel', onGasPedalPointerUp, true)
-  window.removeEventListener('wheel', onWindowWheelCursorHint)
-  if (wheelCursorOverrideTimer) window.clearTimeout(wheelCursorOverrideTimer)
-
-  emit('saveScroll', {
-    configPath: props.configPath,
-    scrollY: window.scrollY,
-  })
   clearMorphTimer()
   clearMorphCloseFadeTimer()
   clearCaptionFadeBeforeCloseTimer()

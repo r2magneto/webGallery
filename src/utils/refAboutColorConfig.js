@@ -1,5 +1,7 @@
+import { cacheBustUrl, publicAssetUrl } from './publicAssetUrl.js'
+
 const STORAGE_KEY = 'webGallery.refAboutColorConfig.v1'
-const PROJECT_URL = `${import.meta.env.BASE_URL || '/'}ref-about-colors.json`
+const PROJECT_URL = publicAssetUrl('ref-about-colors.json')
 
 export {
   VGA_PALETTE,
@@ -41,7 +43,7 @@ function hasAnyPaint(cfg) {
 
 export async function loadProjectRefAboutColorConfig() {
   try {
-    const res = await fetch(PROJECT_URL, { cache: 'no-cache' })
+    const res = await fetch(cacheBustUrl(PROJECT_URL))
     if (!res.ok) return null
     const json = await res.json()
     return normalizeColorConfig(json)

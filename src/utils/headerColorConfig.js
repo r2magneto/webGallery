@@ -1,5 +1,7 @@
+import { cacheBustUrl, publicAssetUrl } from './publicAssetUrl.js'
+
 const STORAGE_KEY = 'webGallery.headerColorConfig.v1'
-const PROJECT_URL = `${import.meta.env.BASE_URL || '/'}header-colors.json`
+const PROJECT_URL = publicAssetUrl('header-colors.json')
 
 export {
   VGA_PALETTE,
@@ -46,7 +48,7 @@ function hasAnyPaint(cfg) {
 
 export async function loadProjectHeaderColorConfig() {
   try {
-    const res = await fetch(PROJECT_URL, { cache: 'no-cache' })
+    const res = await fetch(cacheBustUrl(PROJECT_URL))
     if (!res.ok) return null
     const json = await res.json()
     return normalizeColorConfig(json)

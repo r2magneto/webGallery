@@ -5,6 +5,10 @@ import { ensureProjectHeaderDefaultsLoaded } from './utils/headerColorConfig.js'
 import { ensureProjectRefAboutDefaultsLoaded } from './utils/refAboutColorConfig.js'
 import App from './App.vue'
 
+if (typeof history !== 'undefined' && 'scrollRestoration' in history) {
+  history.scrollRestoration = 'manual'
+}
+
 initLenisSmoothScroll()
 
 async function bootstrap() {
