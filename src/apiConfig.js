@@ -62,6 +62,35 @@ export async function fetchGalleryLayoutItems(configFile = 'layout.json') {
   return data.items
 }
 
+/** URL des PHP-Scanners im jeweiligen Bilder-Ordner (gallery1 / gallery2). */
+export function scanGalleryPhpUrl(configPath) {
+  const base = imagesBasePathForLayoutConfig(configPath)
+  return `${base}scan-gallery.php`
+}
+
+/**
+ * Triggert `scan-gallery.php` auf dem Live-Server: Ordner scannen, manifest.json schreiben.
+ * @returns {{ ok: true, count: number, filenames: string[] } | null}
+ */
+export async function rescanGalleryManifestOnServer(configPath, timeoutMs = 15000) {
+  const url = cacheBustUrl(scanGalleryPhpUrl(configPath))
+  try {
+    const res = await fetchWithTimeout(url, timeoutMs)
+    if (!res.ok) return null
+    const data = await res.json()
+    if (data?.ok === true && Array.isArray(data.filenames)) {
+      return {
+        ok: true,
+        count: data.count ?? data.filenames.length,
+        filenames: data.filenames,
+      }
+    }
+  } catch {
+    // Dev ohne PHP / Netzwerk → null, Aufrufer nutzt Fallback
+  }
+  return null
+}
+
 /**
  * Liste der Bilddateinamen aus `public/<gallery>/manifest.json` (nebeneinander zur Galerie).
  * Schema: `{ "filenames": ["a.webp", …] }`. Bei fehlender Datei oder Fehler: [].

@@ -28,6 +28,16 @@ export function getLenis() {
   return lenisRef
 }
 
+/** Hintergrund-Scroll sperren (z. B. Lightbox offen). */
+export function stopLenisScroll() {
+  lenisRef?.stop?.()
+}
+
+/** Hintergrund-Scroll wieder freigeben. */
+export function startLenisScroll() {
+  lenisRef?.start?.()
+}
+
 /** Dimensions neu messen (Bilder geladen, Fenstergröße, Layout). */
 export function resizeLenis() {
   lenisRef?.resize?.()

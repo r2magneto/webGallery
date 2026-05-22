@@ -5,7 +5,11 @@ import { loadRefAboutColorConfig, resolvePalette } from '../utils/refAboutColorC
 import { decodeBestEffort } from '../utils/utf8ansDecode.js'
 import { scheduleResizeLenis } from '../lenisClient.js'
 import { useGasPedalScroll } from '../composables/useGasPedalScroll.js'
+import { useMobileLayout } from '../composables/useMobileLayout.js'
+import { MOBILE_MEDIA } from '../utils/mobileViewport.js'
 import GalleryScrollbar from './GalleryScrollbar.vue'
+
+const { isMobileLayout } = useMobileLayout()
 
 const ANSI_URL = `${import.meta.env.BASE_URL || '/'}ref-about_01_BW.utf8ans`
 
@@ -77,19 +81,133 @@ async function loadArt() {
   }
 }
 
+/** Entspricht Tailwind px-[clamp(8px,1.6vw,14px)] — eine Seite (wie SiteHeader). */
+function refAboutMobilePadOneSidePx() {
+  const vw = window.innerWidth
+  return Math.min(14, Math.max(8, vw * 0.016))
+}
+
+/** Nutzbare Breite: Viewport minus Header-kompatibles Seitenpadding. */
+function refAboutMobileAvailableWidthPx() {
+  return Math.max(1, window.innerWidth - 2 * refAboutMobilePadOneSidePx())
+}
+
+/** Atemraum links/rechts — verhindert Subpixel-Abschnitt am rechten Rand. */
+const REF_ABOUT_MOBILE_FIT_INSET_PX = 16
+
+function refAboutMobileFitWidthPx() {
+  return Math.max(1, refAboutMobileContentWidthPx() - REF_ABOUT_MOBILE_FIT_INSET_PX)
+}
+
+function refAboutMobileContentWidthPx() {
+  const wrap = shellRef.value?.querySelector('.ref-about-wrap')
+  if (wrap instanceof HTMLElement && wrap.clientWidth > 0) {
+    return wrap.clientWidth
+  }
+  return refAboutMobileAvailableWidthPx()
+}
+
+/** Unskalierte Layout-Breite des <pre> (mehrere Messungen, konservativ). */
+function measureRefAboutPreWidthPx(pre) {
+  return Math.max(
+    pre.scrollWidth,
+    pre.offsetWidth,
+    pre.getBoundingClientRect().width,
+  )
+}
+
+/**
+ * Skalierung so wählen, dass die skalierte Bounding-Box in available passt
+ * (scrollWidth unterschätzt teils letter-spacing / Subpixel).
+ */
+function computeRefAboutMobileScale(canvas, pre, fitWidth) {
+  const preW = measureRefAboutPreWidthPx(pre)
+  if (preW <= 0 || fitWidth <= 0) return 1
+
+  let scale = fitWidth / preW
+  for (let pass = 0; pass < 6; pass += 1) {
+    canvas.style.setProperty('--ansi-scale', String(scale))
+    void pre.offsetWidth
+    const scaledW = pre.getBoundingClientRect().width
+    if (scaledW <= fitWidth - 0.5 || scaledW <= 0) break
+    scale *= (fitWidth - 0.5) / scaledW
+  }
+
+  return Math.min(1, scale * 0.992)
+}
+
 /** transform:scale lässt unten Leerraum — Margin zieht Layout an die sichtbare Höhe. */
 function syncRefAboutCanvasLayout() {
   const canvas = shellRef.value?.querySelector('.ref-about-canvas')
   const pre = canvas?.querySelector('.ref-about-pre')
   if (!(canvas instanceof HTMLElement) || !(pre instanceof HTMLElement)) return
 
+  const mobile = window.matchMedia(MOBILE_MEDIA).matches
+  if (mobile) {
+    pre.style.position = 'static'
+    pre.style.top = ''
+    pre.style.left = ''
+    canvas.style.setProperty('--ansi-scale', '1')
+    void pre.offsetWidth
+
+    const fitWidth = refAboutMobileFitWidthPx()
+    const fitScale = computeRefAboutMobileScale(canvas, pre, fitWidth)
+    const preW = measureRefAboutPreWidthPx(pre)
+    const preH = pre.offsetHeight
+
+    canvas.style.setProperty('--ansi-scale', String(fitScale))
+    void pre.offsetWidth
+    const scaledW = Math.ceil(pre.getBoundingClientRect().width)
+    const scaledH = Math.max(1, Math.ceil(preH * fitScale))
+
+    canvas.style.width = `${scaledW}px`
+    canvas.style.height = `${scaledH}px`
+    canvas.style.maxWidth = '100%'
+    canvas.style.marginLeft = 'auto'
+    canvas.style.marginRight = 'auto'
+    pre.style.position = 'absolute'
+    pre.style.top = '0'
+    pre.style.left = ''
+    pre.style.marginBottom = '0'
+    canvas.style.marginBottom = '0'
+    scheduleResizeLenis()
+    return
+  }
+
+  pre.style.position = ''
+  pre.style.top = ''
+  pre.style.left = ''
+  canvas.style.width = ''
+  canvas.style.height = ''
+  canvas.style.maxWidth = ''
+  canvas.style.marginLeft = ''
+  canvas.style.marginRight = ''
+  canvas.style.removeProperty('--ansi-scale')
+
   const layoutH = pre.offsetHeight
-  const scale = Number.parseFloat(getComputedStyle(canvas).getPropertyValue('--ansi-scale')) || 1
+  const scale =
+    Number.parseFloat(getComputedStyle(canvas).getPropertyValue('--ansi-scale')) || 1
   if (layoutH <= 0 || scale >= 1) {
     canvas.style.marginBottom = ''
+    pre.style.marginBottom = ''
     return
   }
   canvas.style.marginBottom = `${-layoutH * (1 - scale)}px`
+  pre.style.marginBottom = ''
+}
+
+let refAboutWrapResizeObserver = null
+
+function bindRefAboutWrapResizeObserver() {
+  refAboutWrapResizeObserver?.disconnect()
+  refAboutWrapResizeObserver = null
+  if (!window.matchMedia(MOBILE_MEDIA).matches) return
+  const wrap = shellRef.value?.querySelector('.ref-about-wrap')
+  if (!wrap || typeof ResizeObserver === 'undefined') return
+  refAboutWrapResizeObserver = new ResizeObserver(() => {
+    syncRefAboutCanvasLayout()
+  })
+  refAboutWrapResizeObserver.observe(wrap)
 }
 
 onMounted(() => {
@@ -101,20 +219,31 @@ onMounted(() => {
     })
   })
   window.addEventListener('resize', syncRefAboutCanvasLayout, { passive: true })
-  loadArt()
+  loadArt().then(() => {
+    document.fonts?.ready?.then(() => {
+      syncRefAboutCanvasLayout()
+      bindRefAboutWrapResizeObserver()
+    })
+    nextTick(() => bindRefAboutWrapResizeObserver())
+  })
 })
 
 watch([ansiLines, loadState], () => {
-  nextTick(() => syncRefAboutCanvasLayout())
+  nextTick(() => {
+    syncRefAboutCanvasLayout()
+    bindRefAboutWrapResizeObserver()
+  })
 })
 
 onBeforeUnmount(() => {
   window.removeEventListener('resize', syncRefAboutCanvasLayout)
+  refAboutWrapResizeObserver?.disconnect()
+  refAboutWrapResizeObserver = null
 })
 </script>
 
 <template>
-  <GalleryScrollbar :active="scrollbarActive" />
+  <GalleryScrollbar :active="scrollbarActive" :hide-on-mobile="isMobileLayout" />
   <div
     ref="shellRef"
     class="ref-about-root ref-about-shell"
@@ -124,7 +253,9 @@ onBeforeUnmount(() => {
     @pointermove="onShellPointerMove"
     @pointerleave="onShellPointerLeave"
   >
-    <div class="ref-about-wrap w-full px-[9%] pb-0 pt-[0.45rem]">
+    <div
+      class="ref-about-wrap w-full px-[9%] pb-0 pt-[0.45rem] max-[767px]:px-[clamp(8px,1.6vw,14px)]"
+    >
       <p v-if="loadState === 'loading'" class="ref-about-status">Lade Grafik …</p>
       <p v-else-if="error" class="ref-about-status ref-about-status--error">{{ error }}</p>
 
@@ -148,6 +279,7 @@ onBeforeUnmount(() => {
   z-index: 5;
   min-height: 0;
   color: #ffffff;
+  max-width: 100%;
 }
 
 .ref-about-pre,
@@ -159,6 +291,7 @@ onBeforeUnmount(() => {
 .ref-about-wrap {
   max-width: 100%;
   margin: 0 auto;
+  box-sizing: border-box;
 }
 
 .ref-about-status {
@@ -188,6 +321,7 @@ onBeforeUnmount(() => {
   white-space: pre;
   font-family: 'Web437 IBM VGA 9x16', 'Web437 IBM VGA 8x14 2x',
     'Web437 IBM VGA 8x14', ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
   font-size: clamp(10px, 1.4vw, 18px);
   line-height: 0.99;
   letter-spacing: -0.5px;
@@ -213,5 +347,41 @@ onBeforeUnmount(() => {
 .ansi-nl {
   display: block;
   height: 0;
+}
+
+@media (max-width: 767px) {
+  .ref-about-root {
+    overflow-x: hidden;
+    min-width: 0;
+  }
+
+  .ref-about-wrap {
+    overflow-x: hidden;
+    min-width: 0;
+  }
+
+  /*
+   * Canvas = sichtbare Box (JS: skalierte Breite/Höhe).
+   * <pre> absolut + transform: skaliert die volle Grafik, ohne Layout-Overflow.
+   */
+  .ref-about-canvas {
+    position: relative;
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
+    transform: none;
+  }
+
+  .ref-about-pre {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    display: block;
+    width: max-content;
+    max-width: none;
+    margin: 0;
+    transform: translateX(-50%) scale(var(--ansi-scale));
+    transform-origin: top center;
+  }
 }
 </style>

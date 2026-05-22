@@ -8,6 +8,11 @@ const props = defineProps({
     type: Boolean,
     default: true,
   },
+  /** Viewport unter 768px: Custom-Scrollbar ausblenden */
+  hideOnMobile: {
+    type: Boolean,
+    default: false,
+  },
 })
 
 const trackRef = ref(null)
@@ -283,7 +288,7 @@ onBeforeUnmount(() => {
 <template>
   <Teleport to="body">
     <div
-      v-show="showChrome && active"
+      v-show="showChrome && active && !hideOnMobile"
       ref="trackRef"
       class="gallery-scrollbar-track"
       role="scrollbar"

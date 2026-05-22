@@ -16,6 +16,8 @@ import {
   scheduleResizeLenis,
   cancelScheduledResizeLenis,
   scrollWindowToY,
+  stopLenisScroll,
+  startLenisScroll,
 } from '../lenisClient.js'
 import {
   squareRowHeightPx,
@@ -24,6 +26,13 @@ import {
 import { createGridHostWidthObserver } from '../utils/gridHostResize.js'
 import GalleryScrollbar from './GalleryScrollbar.vue'
 import { useGasPedalScroll } from '../composables/useGasPedalScroll.js'
+import { useMobileLayout } from '../composables/useMobileLayout.js'
+import { Swiper, SwiperSlide } from 'swiper/vue'
+import { Keyboard, Zoom } from 'swiper/modules'
+import 'swiper/css'
+import 'swiper/css/zoom'
+
+const lbSwiperModules = [Keyboard, Zoom]
 
 const props = defineProps({
   /** Layout-JSON im public-Ordner (z. B. layout.json). */
@@ -34,8 +43,20 @@ const props = defineProps({
 })
 
 /** Padding: 4 % links/rechts; oben/unten je 0,5 % Bandhöhe (2× → ~99 % Bildhöhe) */
-const LB_PAD_X_FRAC = 0.04
-const LB_PAD_Y_FRAC = 0.005
+const LB_PAD_X_FRAC_DESKTOP = 0.04
+const LB_PAD_Y_FRAC_DESKTOP = 0.005
+const LB_PAD_X_FRAC_MOBILE = 0.02
+const LB_PAD_Y_FRAC_MOBILE = 0.0025
+
+const { isMobileLayout } = useMobileLayout()
+
+function lbPadXFrac() {
+  return isMobileLayout.value ? LB_PAD_X_FRAC_MOBILE : LB_PAD_X_FRAC_DESKTOP
+}
+
+function lbPadYFrac() {
+  return isMobileLayout.value ? LB_PAD_Y_FRAC_MOBILE : LB_PAD_Y_FRAC_DESKTOP
+}
 /** Gelbe Outline in der Vollansicht (Morph-Ende = Lightbox) */
 const LB_FULL_OUTLINE_PX = 1
 /** Abstand Caption-Overlay zum linken/unteren Bildrand (im Bild-Wrapper) */
@@ -194,6 +215,17 @@ const hasLightboxCaption = computed(
   () => currentLightboxCaptionRaw.value.trim() !== '',
 )
 
+function lightboxCaptionRawForItem(item) {
+  const v = item?.caption
+  return v != null ? String(v) : ''
+}
+
+function hasLightboxCaptionForItem(item) {
+  return lightboxCaptionRawForItem(item).trim() !== ''
+}
+
+const lbSwiperInstance = ref(null)
+
 function clearMorphTimer() {
   if (morphFinishTimer != null) {
     clearTimeout(morphFinishTimer)
@@ -349,17 +381,13 @@ function lightboxLayoutForIndex(index) {
     nw = 1600
     nh = 900
   }
-  const innerMaxW = slotMaxW * (1 - 2 * LB_PAD_X_FRAC)
-  const innerMaxH = slotMaxH * (1 - 2 * LB_PAD_Y_FRAC)
+  const padX = lbPadXFrac()
+  const padY = lbPadYFrac()
+  const innerMaxW = slotMaxW * (1 - 2 * padX)
+  const innerMaxH = slotMaxH * (1 - 2 * padY)
   const { w: iw, h: ih } = fitContain(nw, nh, innerMaxW, innerMaxH)
-  const bandW = Math.min(
-    slotMaxW,
-    Math.ceil(iw / (1 - 2 * LB_PAD_X_FRAC)),
-  )
-  const bandH = Math.min(
-    slotMaxH,
-    Math.ceil(ih / (1 - 2 * LB_PAD_Y_FRAC)),
-  )
+  const bandW = Math.min(slotMaxW, Math.ceil(iw / (1 - 2 * padX)))
+  const bandH = Math.min(slotMaxH, Math.ceil(ih / (1 - 2 * padY)))
   const shellW = bandW
   const shellH = bandH
   return {
@@ -579,6 +607,7 @@ function runCloseLightboxMorph() {
 
 function closeLightbox() {
   if (lightboxIndex.value === null) return
+  startLenisScroll()
   if (viewerMode.value === 'opening') {
     clearMorphTimer()
     clearMorphCloseFadeTimer()
@@ -603,8 +632,41 @@ function closeLightbox() {
   runCloseLightboxMorph()
 }
 
+function syncLbActiveSlideRefs(swiper) {
+  const slide = swiper?.slides?.[swiper.activeIndex]
+  const frame = slide?.querySelector('.lb-framed')
+  const img = slide?.querySelector('.lb-main-img')
+  lbContentWrapRef.value = frame instanceof HTMLElement ? frame : null
+  lbContentImgRef.value = img instanceof HTMLImageElement ? img : null
+}
+
+function onLbSwiperInit(swiper) {
+  lbSwiperInstance.value = swiper
+  if (lightboxIndex.value != null && swiper.activeIndex !== lightboxIndex.value) {
+    swiper.slideTo(lightboxIndex.value, 0)
+  }
+  nextTick(() => syncLbActiveSlideRefs(swiper))
+}
+
+function onLbSwiperSlideChange(swiper) {
+  lightboxIndex.value = swiper.activeIndex
+  if (swiper.zoom?.scale && swiper.zoom.scale > 1) {
+    swiper.zoom.out()
+  }
+  syncLbActiveSlideRefs(swiper)
+}
+
+function onLbSwiperDestroy() {
+  lbSwiperInstance.value = null
+}
+
 function prevImage() {
   if (viewerMode.value !== 'viewing') return
+  const swiper = lbSwiperInstance.value
+  if (swiper) {
+    swiper.slidePrev()
+    return
+  }
   const n = layout.value.length
   if (n === 0 || lightboxIndex.value === null) return
   lightboxIndex.value = (lightboxIndex.value - 1 + n) % n
@@ -612,10 +674,98 @@ function prevImage() {
 
 function nextImage() {
   if (viewerMode.value !== 'viewing') return
+  const swiper = lbSwiperInstance.value
+  if (swiper) {
+    swiper.slideNext()
+    return
+  }
   const n = layout.value.length
   if (n === 0 || lightboxIndex.value === null) return
   lightboxIndex.value = (lightboxIndex.value + 1) % n
 }
+
+const LB_VERTICAL_DISMISS_PX = 60
+
+let lbTouchStart = null
+let lbTouchDismissed = false
+let lbSuppressOverlayClick = false
+
+function resetLbTouch() {
+  lbTouchStart = null
+  lbTouchDismissed = false
+}
+
+function onLbOverlayTouchStart(e) {
+  if (viewerMode.value !== 'viewing') return
+  if (e.touches.length !== 1) return
+  const t = e.touches[0]
+  if (t.target instanceof Element && t.target.closest('.swiper-zoom-container')) {
+    return
+  }
+  lbTouchStart = { x: t.clientX, y: t.clientY }
+  lbTouchDismissed = false
+  lbSuppressOverlayClick = false
+}
+
+function onLbOverlayTouchMove(e) {
+  if (!lbTouchStart || viewerMode.value !== 'viewing' || lbTouchDismissed) return
+  if (e.touches.length !== 1) return
+  const t = e.touches[0]
+  const dx = t.clientX - lbTouchStart.x
+  const dy = t.clientY - lbTouchStart.y
+
+  const isVerticalDismiss =
+    Math.abs(dy) >= LB_VERTICAL_DISMISS_PX && Math.abs(dy) > Math.abs(dx)
+
+  if (isVerticalDismiss) {
+    lbTouchDismissed = true
+    lbSuppressOverlayClick = true
+    e.preventDefault()
+    closeLightbox()
+    return
+  }
+
+  if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 8) {
+    e.preventDefault()
+  }
+}
+
+function onLbOverlayTouchEnd() {
+  resetLbTouch()
+}
+
+function onLbOverlayClickSelf() {
+  if (lbSuppressOverlayClick) {
+    lbSuppressOverlayClick = false
+    return
+  }
+  closeLightbox()
+}
+
+function onLbBackdropClick() {
+  if (lbSuppressOverlayClick) {
+    lbSuppressOverlayClick = false
+    return
+  }
+  closeLightbox()
+}
+
+/** Tap auf leeren Swiper-Bereich (nicht auf Bild/Rahmen). */
+function onLbSwiperTap(_swiper, event) {
+  if (viewerMode.value !== 'viewing') return
+  const target = event?.target
+  if (!(target instanceof Element)) return
+  if (
+    target.closest(
+      '.lb-framed, .lb-main-img, .lb-caption-overlay, .swiper-zoom-container',
+    )
+  ) {
+    return
+  }
+  closeLightbox()
+}
+
+const gridMargin = computed(() => (isMobileLayout.value ? [5, 5] : [10, 10]))
 
 function onLightboxKeydown(e) {
   if (lightboxIndex.value === null) return
@@ -638,6 +788,11 @@ function onLightboxKeydown(e) {
 const lightboxOpen = computed(
   () => lightboxIndex.value !== null && viewerMode.value !== 'idle',
 )
+
+watch(lightboxOpen, (open) => {
+  if (open) stopLenisScroll()
+  else startLenisScroll()
+})
 
 const galleryScrollbarActive = computed(
   () =>
@@ -723,7 +878,10 @@ watch(gridRowHeight, () => {
 })
 
 watch(viewerMode, (m) => {
-  if (m === 'idle') lbCaptionFastHide.value = false
+  if (m === 'idle') {
+    lbCaptionFastHide.value = false
+    lbSwiperInstance.value = null
+  }
 })
 
 watch(
@@ -763,11 +921,15 @@ onBeforeUnmount(() => {
   gridLayoutHeightObserver?.disconnect()
   gridLayoutHeightObserver = null
   cancelScheduledResizeLenis()
+  if (lightboxOpen.value) startLenisScroll()
 })
 </script>
 
 <template>
-  <GalleryScrollbar :active="galleryScrollbarActive" />
+  <GalleryScrollbar
+    :active="galleryScrollbarActive"
+    :hide-on-mobile="isMobileLayout"
+  />
   <div
     ref="viewerRootRef"
     class="viewer-root relative min-h-svh w-full overflow-x-hidden bg-transparent"
@@ -803,12 +965,15 @@ onBeforeUnmount(() => {
         @pointermove="onGridShellPointerMoveCursor"
         @pointerleave="onGridShellPointerLeaveCursor"
       >
-      <div ref="gridHostRef" class="w-full px-[10%]">
+      <div
+        ref="gridHostRef"
+        class="viewer-grid-host w-full px-[10%] max-[767px]:px-[clamp(8px,1.6vw,14px)]"
+      >
       <GridLayout
         v-model:layout="layout"
         :col-num="48"
         :row-height="gridRowHeight"
-        :margin="[10, 10]"
+        :margin="gridMargin"
         :is-draggable="false"
         :is-resizable="false"
         :vertical-compact="false"
@@ -868,18 +1033,25 @@ onBeforeUnmount(() => {
       <Transition name="lb-overlay">
         <div
           v-if="lightboxOpen"
-          class="fixed inset-0 z-[200] flex items-center justify-center p-4"
-          :class="{ 'pointer-events-none': viewerMode === 'closing' }"
+          class="lb-overlay fixed inset-0 z-[200] flex items-center justify-center p-4"
+          :class="{
+            'pointer-events-none': viewerMode === 'closing',
+            'lb-overlay--scroll-lock': lightboxOpen && viewerMode !== 'closing',
+          }"
           role="dialog"
           aria-modal="true"
           aria-label="Bildansicht"
-          @click.self="closeLightbox"
+          @click.self="onLbOverlayClickSelf"
+          @touchstart.passive="onLbOverlayTouchStart"
+          @touchmove="onLbOverlayTouchMove"
+          @touchend="onLbOverlayTouchEnd"
+          @touchcancel="onLbOverlayTouchEnd"
         >
           <div
             class="lb-backdrop absolute inset-0 z-0 bg-black/90 will-change-[opacity]"
             :style="lightboxBackdropStyle"
             aria-hidden="true"
-            @click="closeLightbox"
+            @click="onLbBackdropClick"
           />
 
           <div
@@ -949,20 +1121,35 @@ onBeforeUnmount(() => {
           </div>
 
           <div
-            v-if="viewerMode === 'viewing'"
-            class="relative z-[15] flex min-h-[min(90vh,100%)] min-w-[min(95vw,100%)] max-h-[92vh] max-w-[min(95vw,100%)] items-center justify-center"
+            v-if="viewerMode === 'viewing' && lightboxIndex !== null"
+            class="lb-viewing-shell relative z-[15] flex min-h-[min(90vh,100%)] min-w-[min(95vw,100%)] max-h-[92vh] max-w-[min(95vw,100%)] items-center justify-center"
           >
-            <div
-              class="lb-crossfade-stack relative w-full max-w-[min(95vw,100%)]"
-              style="min-height: min(88vh, 82svh)"
+            <Swiper
+              class="lb-swiper"
+              :modules="lbSwiperModules"
+              :initial-slide="lightboxIndex"
+              :slides-per-view="1"
+              :space-between="30"
+              :speed="380"
+              :touch-ratio="1"
+              :threshold="8"
+              :resistance-ratio="0.82"
+              :long-swipes-ratio="0.35"
+              :keyboard="{ enabled: true, onlyInViewport: true }"
+              :zoom="{ maxRatio: 3, toggle: true }"
+              @swiper="onLbSwiperInit"
+              @slide-change="onLbSwiperSlideChange"
+              @tap="onLbSwiperTap"
+              @destroy="onLbSwiperDestroy"
             >
-              <Transition name="lb-navfade">
+              <SwiperSlide
+                v-for="(item, index) in layout"
+                :key="item.i"
+                class="lb-swiper-slide"
+              >
                 <div
-                  v-if="lightboxIndex !== null && currentLightboxSrc"
-                  ref="lbContentWrapRef"
-                  :key="lightboxIndex"
-                  class="lb-framed lb-navslide mx-auto flex min-h-0 flex-col overflow-hidden bg-neutral-950/30 outline outline-[1px] outline-yellow-400"
-                  :style="lightboxFrameCss(lightboxIndex)"
+                  class="lb-framed mx-auto flex min-h-0 flex-col overflow-hidden bg-neutral-950/30 outline outline-[1px] outline-yellow-400"
+                  :style="lightboxFrameCss(index)"
                 >
                   <div
                     class="lb-img-slot lb-img-slot-cq flex min-h-0 flex-1 items-center justify-center overflow-hidden"
@@ -970,17 +1157,22 @@ onBeforeUnmount(() => {
                     <div
                       class="lb-image-frame relative z-0 inline-block max-h-full max-w-full min-h-0"
                     >
-                      <img
-                        ref="lbContentImgRef"
-                        :src="currentLightboxSrc"
-                        alt=""
-                        class="lb-main-img relative z-0 block max-h-[99%] max-w-[99%] object-contain shadow-2xl"
-                        @load="onLightboxImgLoad"
-                      />
+                      <div class="swiper-zoom-container">
+                        <img
+                          :src="item.src"
+                          :alt="item.i"
+                          class="lb-main-img swiper-zoom-target relative z-0 block shadow-2xl"
+                          draggable="false"
+                          @load="onLightboxImgLoad"
+                        />
+                      </div>
                       <div
-                        v-if="hasLightboxCaption"
+                        v-if="hasLightboxCaptionForItem(item)"
                         class="lb-caption-overlay pointer-events-none"
-                        :class="{ 'lb-caption-overlay--fast-hide': lbCaptionFastHide }"
+                        :class="{
+                          'lb-caption-overlay--fast-hide':
+                            lbCaptionFastHide && index === lightboxIndex,
+                        }"
                         :style="{
                           left: `${LB_CAPTION_INSET}px`,
                           bottom: `${LB_CAPTION_INSET}px`,
@@ -988,17 +1180,18 @@ onBeforeUnmount(() => {
                         }"
                       >
                         <div class="lb-caption-overlay-inner">
-                          {{ currentLightboxCaptionRaw }}
+                          {{ lightboxCaptionRawForItem(item) }}
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </Transition>
-            </div>
+              </SwiperSlide>
+            </Swiper>
 
             <div
-              class="absolute inset-0 z-[40] flex w-full"
+              v-show="!isMobileLayout"
+              class="lb-zone-controls absolute inset-0 z-[40] flex w-full"
               aria-hidden="true"
             >
               <button
@@ -1153,41 +1346,67 @@ onBeforeUnmount(() => {
   opacity: 0;
 }
 
-/* Crossfade: Slides absolut zentriert, jeweils eigener Rahmen + Maß */
-.lb-crossfade-stack {
-  position: relative;
-  width: 100%;
+.lb-overlay.lb-overlay--scroll-lock {
+  touch-action: none;
 }
 
-.lb-navslide {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  translate: -50% -50%;
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
+.lb-swiper {
+  width: 100%;
   max-width: min(95vw, 100%);
+  height: min(88vh, 82svh);
+  padding: 0 16px;
+  box-sizing: border-box;
+  overflow: hidden;
+  touch-action: none;
+}
+
+.lb-swiper :deep(.swiper-zoom-container) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.lb-swiper :deep(.swiper-wrapper) {
+  align-items: center;
+}
+
+.lb-swiper-slide {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: min(88vh, 82svh);
+  max-height: min(88vh, 82svh);
   box-sizing: border-box;
 }
 
-.lb-navfade-enter-active,
-.lb-navfade-leave-active {
-  transition: opacity 0.3s ease;
-  will-change: opacity;
+.lb-swiper .lb-framed {
+  max-width: 100%;
+  max-height: 100%;
+  box-sizing: border-box;
 }
 
-.lb-navfade-enter-active {
-  z-index: 2;
+.lb-swiper .lb-img-slot {
+  max-width: 100%;
+  max-height: 100%;
 }
 
-.lb-navfade-leave-active {
-  z-index: 1;
+.lb-swiper .lb-image-frame {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  max-width: 100%;
+  max-height: 100%;
 }
 
-.lb-navfade-enter-from,
-.lb-navfade-leave-to {
-  opacity: 0;
+.lb-swiper .lb-main-img,
+.lb-swiper .swiper-zoom-target {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
 }
 
 .lb-morph-inner-img {
@@ -1197,6 +1416,7 @@ onBeforeUnmount(() => {
 .lb-main-img {
   width: auto;
   height: auto;
+  object-fit: contain;
 }
 
 /* ~0,5 % Bandhöhe oben/unten, 4 % Bandbreite links/rechts — Morph & Lightbox identisch */
@@ -1234,5 +1454,12 @@ onBeforeUnmount(() => {
 .lb-caption-overlay--fast-hide {
   opacity: 0;
   transition: opacity 95ms ease-out;
+}
+
+@media (max-width: 767px) {
+  .lb-img-slot-cq {
+    padding: 0.25cqh 2cqw;
+  }
+
 }
 </style>

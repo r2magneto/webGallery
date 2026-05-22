@@ -37,7 +37,9 @@ function exitEditor() {
 </script>
 
 <template>
-  <div class="relative min-h-svh bg-neutral-950">
+  <div
+    class="relative min-h-svh max-w-full bg-neutral-950 max-[767px]:overflow-x-hidden"
+  >
     <SiteHeader
       :gallery-tab="galleryTab"
       :is-edit-mode="isEditMode"

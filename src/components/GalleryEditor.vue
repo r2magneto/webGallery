@@ -15,6 +15,7 @@ import {
   downloadStaticLayoutJson,
   fetchGalleryLayoutItems,
   fetchManifestFilenames,
+  rescanGalleryManifestOnServer,
 } from '../apiConfig.js'
 import {
   imagesBasePathForLayoutConfig,
@@ -136,10 +137,10 @@ function filenameFromSrc(src) {
   return parts.length ? parts[parts.length - 1] : ''
 }
 
-async function syncFolderToLayout() {
-  saveStatus.value = ''
+async function syncFolderToLayout({ statusPrefix = '', keepStatus = false } = {}) {
+  if (!keepStatus) saveStatus.value = ''
   const filenames = (await fetchManifestFilenames(props.configPath)).filter((n) =>
-    String(n).toLowerCase().endsWith('.webp'),
+    /\.(jpe?g|png|webp)$/i.test(String(n)),
   )
   const manifestSet = new Set(filenames)
 
@@ -206,13 +207,16 @@ async function syncFolderToLayout() {
     added.push(name)
   }
 
+  const lead = statusPrefix ? `${statusPrefix} ` : ''
   if (added.length === 0 && removedCount === 0) {
-    saveStatus.value = 'Keine Änderungen – Layout ist bereits synchron.'
+    saveStatus.value = lead
+      ? `${statusPrefix} Layout ist bereits synchron.`
+      : 'Keine Änderungen – Layout ist bereits synchron.'
   } else {
     const parts = []
     if (added.length) parts.push(`${added.length} hinzugefügt`)
     if (removedCount) parts.push(`${removedCount} entfernt`)
-    saveStatus.value = `Synchronisiert: ${parts.join(', ')}.`
+    saveStatus.value = `${lead}Synchronisiert: ${parts.join(', ')}.`.trim()
   }
   clearTimeout(saveStatusTimer)
   saveStatusTimer = setTimeout(() => {
@@ -545,9 +549,15 @@ function probeImageNatural(src) {
 }
 
 async function scanFolder() {
+  saveStatus.value = 'Scanne Bilderordner auf dem Server…'
   try {
-    await syncFolderToLayout()
+    const scan = await rescanGalleryManifestOnServer(props.configPath)
+    const prefix = scan
+      ? `Manifest auf dem Server neu geschrieben (${scan.count} Datei${scan.count === 1 ? '' : 'en'}).`
+      : 'PHP-Scan nicht erreichbar — lese vorhandenes manifest.json (lokal: npm run dev oder server).'
+    await syncFolderToLayout({ statusPrefix: prefix })
   } catch (e) {
+    saveStatus.value = ''
     alert(e instanceof Error ? e.message : 'Scan fehlgeschlagen.')
   }
 }
@@ -771,7 +781,7 @@ async function onResetAspect(item) {
           class="rounded-lg border border-white/20 bg-slate-800 px-4 py-2 text-sm font-medium text-slate-100 hover:bg-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
           @click="scanFolder"
         >
-          Manifest einlesen
+          Manifest neu einlesen
         </button>
       </template>
       <p

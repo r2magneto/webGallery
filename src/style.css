@@ -71,3 +71,13 @@ html.lenis::-webkit-scrollbar {
     filter: hue-rotate(360deg);
   }
 }
+
+/* Mobil: kein seitliches „Wackeln“ durch breite ASCII-Layout-Boxen */
+@media (max-width: 767px) {
+  html.lenis,
+  html.lenis body,
+  #app {
+    overflow-x: hidden;
+    max-width: 100%;
+  }
+}
