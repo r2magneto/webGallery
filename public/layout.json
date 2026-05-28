@@ -29,10 +29,10 @@
     },
     {
       "i": "m_Screenshot 2026-03-17 11.19.04_ups",
-      "x": 35,
-      "y": 107,
-      "w": 10,
-      "h": 6,
+      "x": 4,
+      "y": 84,
+      "w": 12,
+      "h": 7,
       "src": "/images/gallery1/m_Screenshot 2026-03-17 11.19.04_ups.webp",
       "caption": "TheIllestAgency - AEIOU - YKKE / Music Video"
     },
@@ -50,7 +50,7 @@
       "x": 1,
       "y": 36,
       "w": 10,
-      "h": 6,
+      "h": 5,
       "src": "/images/gallery1/bild007.webp",
       "caption": "TimeRideVR Collogne - Population Animations"
     },
@@ -65,8 +65,8 @@
     },
     {
       "i": "bild008",
-      "x": 39,
-      "y": 53,
+      "x": 28,
+      "y": 49,
       "w": 9,
       "h": 6,
       "src": "/images/gallery1/bild008.webp",
@@ -83,25 +83,25 @@
     },
     {
       "i": "bild006",
-      "x": 10,
+      "x": 0,
       "y": 65,
-      "w": 8,
+      "w": 10,
       "h": 7,
       "src": "/images/gallery1/bild006.webp"
     },
     {
       "i": "bild010",
-      "x": 1,
-      "y": 60,
+      "x": 3,
+      "y": 53,
       "w": 9,
-      "h": 4,
+      "h": 5,
       "src": "/images/gallery1/bild010.webp",
       "caption": "Vodafone MoonRide VR Experience Cebit - MotionCapture / Retarget / Edit"
     },
     {
       "i": "bild012",
-      "x": 10,
-      "y": 46,
+      "x": 2,
+      "y": 41,
       "w": 9,
       "h": 5,
       "src": "/images/gallery1/bild012.webp",
@@ -127,21 +127,12 @@
     },
     {
       "i": "bild014",
-      "x": 30,
-      "y": 47,
-      "w": 9,
-      "h": 6,
+      "x": 26,
+      "y": 78,
+      "w": 14,
+      "h": 8,
       "src": "/images/gallery1/bild014.webp",
       "caption": "Stabilo - Finger & Pen Capture"
-    },
-    {
-      "i": "bild019",
-      "x": 40,
-      "y": 79,
-      "w": 8,
-      "h": 4,
-      "src": "/images/gallery1/bild019.webp",
-      "caption": "a current state - MusicVideo \"Nummer Eins\" / Farid Bang, Haftbefehl, Adel Tawil"
     },
     {
       "i": "bild024",
@@ -154,10 +145,10 @@
     },
     {
       "i": "bild016",
-      "x": 39,
-      "y": 65,
+      "x": 19,
+      "y": 50,
       "w": 9,
-      "h": 6,
+      "h": 5,
       "src": "/images/gallery1/bild016.webp",
       "caption": "Training Video - Disarming Techniques in Close Protection"
     },
@@ -172,17 +163,17 @@
     },
     {
       "i": "bild20",
-      "x": 19,
-      "y": 59,
-      "w": 9,
-      "h": 5,
+      "x": 6,
+      "y": 58,
+      "w": 13,
+      "h": 7,
       "src": "/images/gallery1/bild20.webp",
       "caption": "GroundStudios - Schumann VR Experience Düsseldorf"
     },
     {
       "i": "bild017",
-      "x": 39,
-      "y": 59,
+      "x": 19,
+      "y": 44,
       "w": 9,
       "h": 6,
       "src": "/images/gallery1/bild017.webp",
@@ -190,18 +181,18 @@
     },
     {
       "i": "bild021",
-      "x": 35,
+      "x": 38,
       "y": 32,
-      "w": 8,
+      "w": 9,
       "h": 6,
       "src": "/images/gallery1/bild021.webp"
     },
     {
       "i": "bild015",
-      "x": 26,
+      "x": 28,
       "y": 37,
-      "w": 9,
-      "h": 5,
+      "w": 10,
+      "h": 6,
       "src": "/images/gallery1/bild015.webp",
       "caption": "TimeRide VR Collogne - Population"
     },
@@ -216,26 +207,26 @@
     },
     {
       "i": "m_Screenshot 2020-04-23 22.59.05",
-      "x": 20,
-      "y": 74,
+      "x": 7,
+      "y": 78,
       "w": 11,
       "h": 6,
       "src": "/images/gallery1/m_Screenshot 2020-04-23 22.59.05.webp"
     },
     {
       "i": "bild023",
-      "x": 19,
-      "y": 68,
-      "w": 10,
-      "h": 5,
+      "x": 10,
+      "y": 71,
+      "w": 13,
+      "h": 7,
       "src": "/images/gallery1/bild023.webp"
     },
     {
       "i": "m_Screenshot 2022-09-01 11.11.20",
-      "x": 18,
-      "y": 80,
-      "w": 13,
-      "h": 9,
+      "x": 37,
+      "y": 86,
+      "w": 11,
+      "h": 6,
       "src": "/images/gallery1/m_Screenshot 2022-09-01 11.11.20.webp",
       "caption": "Submilimeter Tracking"
     },
@@ -248,36 +239,20 @@
       "src": "/images/gallery1/m_DSC04949.webp"
     },
     {
-      "i": "bild022",
-      "x": 40,
-      "y": 83,
-      "w": 8,
-      "h": 4,
-      "src": "/images/gallery1/bild022.webp"
-    },
-    {
       "i": "m_Screenshot 2020-12-30 23.17.04",
-      "x": 37,
-      "y": 93,
+      "x": 23,
+      "y": 71,
       "w": 9,
-      "h": 5,
+      "h": 7,
       "src": "/images/gallery1/m_Screenshot 2020-12-30 23.17.04.webp",
       "caption": "Virtual Reality Perception Study - pulp fiction sequence"
     },
     {
-      "i": "m_DSC06293",
-      "x": 11,
-      "y": 73,
-      "w": 9,
-      "h": 6,
-      "src": "/images/gallery1/m_DSC06293.webp"
-    },
-    {
       "i": "m_vlcsnap-2026-04-27-13h42m03s910_ed",
-      "x": 20,
-      "y": 89,
-      "w": 7,
-      "h": 4,
+      "x": 14,
+      "y": 105,
+      "w": 12,
+      "h": 6,
       "src": "/images/gallery1/m_vlcsnap-2026-04-27-13h42m03s910_ed.webp",
       "caption": "Tortuga Games / Capture, Cleanup, Retarget"
     },
@@ -291,8 +266,8 @@
     },
     {
       "i": "m_DSC03237(1)",
-      "x": 0,
-      "y": 86,
+      "x": 32,
+      "y": 66,
       "w": 12,
       "h": 7,
       "src": "/images/gallery1/m_DSC03237(1).webp"
@@ -308,16 +283,16 @@
     },
     {
       "i": "m_DSC03686",
-      "x": 20,
-      "y": 97,
-      "w": 7,
+      "x": 10,
+      "y": 65,
+      "w": 9,
       "h": 6,
       "src": "/images/gallery1/m_DSC03686.webp"
     },
     {
       "i": "bild004",
-      "x": 35,
-      "y": 114,
+      "x": 16,
+      "y": 84,
       "w": 10,
       "h": 7,
       "src": "/images/gallery1/bild004.webp",
@@ -327,8 +302,8 @@
       "i": "m_DSC01823",
       "x": 17,
       "y": 32,
-      "w": 9,
-      "h": 8,
+      "w": 11,
+      "h": 7,
       "src": "/images/gallery1/m_DSC01823.webp"
     },
     {
@@ -341,77 +316,68 @@
     },
     {
       "i": "m_Screenshot 2026-03-13 12.21.47",
-      "x": 35,
-      "y": 121,
+      "x": 26,
+      "y": 86,
       "w": 11,
       "h": 5,
       "src": "/images/gallery1/m_Screenshot 2026-03-13 12.21.47.webp"
     },
     {
       "i": "m_20170524_103555",
-      "x": 20,
-      "y": 103,
-      "w": 6,
-      "h": 5,
+      "x": 26,
+      "y": 109,
+      "w": 5,
+      "h": 8,
       "src": "/images/gallery1/m_20170524_103555.webp",
       "caption": "it might seem wierd..    but i enjoy cable management"
     },
     {
       "i": "m_Screenshot 2020-05-05 14.54.38",
-      "x": 20,
-      "y": 108,
-      "w": 9,
-      "h": 7,
+      "x": 18,
+      "y": 78,
+      "w": 8,
+      "h": 6,
       "src": "/images/gallery1/m_Screenshot 2020-05-05 14.54.38.webp"
     },
     {
       "i": "m_Screenshot 2022-08-15 14.03.12 - Kopie",
-      "x": 7,
-      "y": 108,
-      "w": 12,
-      "h": 7,
+      "x": 19,
+      "y": 62,
+      "w": 13,
+      "h": 9,
       "src": "/images/gallery1/m_Screenshot 2022-08-15 14.03.12 - Kopie.webp"
     },
     {
       "i": "m_Screenshot 2026-03-13 14.02.07_up3",
-      "x": 0,
-      "y": 93,
-      "w": 12,
-      "h": 6,
+      "x": 32,
+      "y": 73,
+      "w": 10,
+      "h": 5,
       "src": "/images/gallery1/m_Screenshot 2026-03-13 14.02.07_up3.webp",
       "caption": "The Secret Store - Promotion Video / Animations for Second life Avatars"
     },
     {
-      "i": "m_20180604_140633",
-      "x": 14,
-      "y": 95,
-      "w": 6,
-      "h": 12,
-      "src": "/images/gallery1/m_20180604_140633.webp",
-      "caption": "CEBIT - Vodafone Moonride / Motioncapture System Installation &  Operation"
-    },
-    {
       "i": "m_DSC04950",
-      "x": 4,
-      "y": 102,
-      "w": 10,
+      "x": 1,
+      "y": 72,
+      "w": 9,
       "h": 6,
       "src": "/images/gallery1/m_DSC04950.webp"
     },
     {
       "i": "m_20180228_111354",
       "x": 19,
-      "y": 40,
-      "w": 7,
-      "h": 4,
+      "y": 39,
+      "w": 9,
+      "h": 5,
       "src": "/images/gallery1/m_20180228_111354.webp"
     },
     {
       "i": "m_Screenshot 2021-05-12 15.04.18",
-      "x": 27,
-      "y": 150,
-      "w": 8,
-      "h": 4,
+      "x": 26,
+      "y": 123,
+      "w": 11,
+      "h": 7,
       "src": "/images/gallery1/m_Screenshot 2021-05-12 15.04.18.webp",
       "caption": "Elberfeld Kreation - Live Stage Projection Performance"
     },
@@ -425,88 +391,88 @@
     },
     {
       "i": "m_vlcsnap-2026-04-27-00h18m39s719_edit",
-      "x": 27,
-      "y": 89,
-      "w": 7,
-      "h": 4,
+      "x": 12,
+      "y": 97,
+      "w": 14,
+      "h": 8,
       "src": "/images/gallery1/m_vlcsnap-2026-04-27-00h18m39s719_edit.webp"
     },
     {
       "i": "m_DSC04253",
-      "x": 23,
-      "y": 121,
+      "x": 32,
+      "y": 117,
       "w": 9,
-      "h": 7,
+      "h": 6,
       "src": "/images/gallery1/m_DSC04253.webp"
     },
     {
       "i": "m_20230921_204454",
-      "x": 21,
-      "y": 116,
+      "x": 9,
+      "y": 111,
       "w": 8,
       "h": 4,
       "src": "/images/gallery1/m_20230921_204454.webp"
     },
     {
       "i": "m_20190831_094932",
-      "x": 3,
-      "y": 144,
+      "x": 37,
+      "y": 92,
       "w": 8,
       "h": 5,
       "src": "/images/gallery1/m_20190831_094932.webp"
     },
     {
       "i": "m_Screenshot 2021-03-19 12.18.58",
-      "x": 3,
-      "y": 155,
+      "x": 26,
+      "y": 97,
       "w": 8,
       "h": 5,
       "src": "/images/gallery1/m_Screenshot 2021-03-19 12.18.58.webp"
     },
     {
       "i": "m_Screenshot 2026-03-17 11.35.21_up",
-      "x": 11,
-      "y": 155,
+      "x": 34,
+      "y": 97,
       "w": 8,
       "h": 5,
       "src": "/images/gallery1/m_Screenshot 2026-03-17 11.35.21_up.webp"
     },
     {
       "i": "m_EntgegenkommendeBahn_f1195_0000_small",
-      "x": 26,
-      "y": 42,
-      "w": 9,
-      "h": 5,
+      "x": 28,
+      "y": 43,
+      "w": 13,
+      "h": 6,
       "src": "/images/gallery1/m_EntgegenkommendeBahn_f1195_0000_small.webp"
     },
     {
       "i": "m_20180503_142845",
-      "x": 11,
-      "y": 134,
+      "x": 31,
+      "y": 109,
       "w": 5,
       "h": 8,
       "src": "/images/gallery1/m_20180503_142845.webp"
     },
     {
       "i": "m_20180530_131441",
-      "x": 0,
-      "y": 133,
-      "w": 7,
-      "h": 4,
+      "x": 17,
+      "y": 111,
+      "w": 9,
+      "h": 6,
       "src": "/images/gallery1/m_20180530_131441.webp"
     },
     {
       "i": "m_Screenshot 2026-03-13 12.20.34_upscaled",
-      "x": 35,
-      "y": 131,
+      "x": 10,
+      "y": 91,
       "w": 11,
       "h": 6,
       "src": "/images/gallery1/m_Screenshot 2026-03-13 12.20.34_upscaled.webp"
     },
     {
       "i": "m_Screenshot 2026-03-13 12.28.56_up",
-      "x": 35,
-      "y": 126,
+      "x": 1,
+      "y": 97,
       "w": 11,
       "h": 5,
       "src": "/images/gallery1/m_Screenshot 2026-03-13 12.28.56_up.webp"
@@ -516,29 +482,29 @@
       "x": 11,
       "y": 32,
       "w": 6,
-      "h": 8,
+      "h": 7,
       "src": "/images/gallery1/m_2021-11-16 01.49.36.webp"
     },
     {
       "i": "m_Screenshot 2022-08-15 13.54.45",
-      "x": 18,
-      "y": 135,
-      "w": 10,
-      "h": 5,
+      "x": 26,
+      "y": 102,
+      "w": 11,
+      "h": 7,
       "src": "/images/gallery1/m_Screenshot 2022-08-15 13.54.45.webp"
     },
     {
       "i": "m_Screenshot 2026-03-16 17.07.02_upscaled2",
-      "x": 40,
-      "y": 87,
-      "w": 8,
-      "h": 4,
+      "x": 19,
+      "y": 55,
+      "w": 13,
+      "h": 7,
       "src": "/images/gallery1/m_Screenshot 2026-03-16 17.07.02_upscaled2.webp"
     },
     {
       "i": "m_20180605_105827",
-      "x": 0,
-      "y": 128,
+      "x": 24,
+      "y": 117,
       "w": 8,
       "h": 5,
       "src": "/images/gallery1/m_20180605_105827.webp",
@@ -563,33 +529,33 @@
     },
     {
       "i": "m_Screenshot 2026-03-17 11.34.54_up",
-      "x": 11,
-      "y": 150,
-      "w": 8,
-      "h": 5,
+      "x": 37,
+      "y": 102,
+      "w": 10,
+      "h": 6,
       "src": "/images/gallery1/m_Screenshot 2026-03-17 11.34.54_up.webp"
     },
     {
       "i": "vlcsnap-2026-05-04-14h24m57s630",
-      "x": 27,
-      "y": 154,
-      "w": 8,
-      "h": 5,
+      "x": 10,
+      "y": 123,
+      "w": 12,
+      "h": 7,
       "src": "/images/gallery1/vlcsnap-2026-05-04-14h24m57s630.webp"
     },
     {
       "i": "DSC02737_PNglove",
-      "x": 2,
-      "y": 149,
-      "w": 9,
+      "x": 30,
+      "y": 91,
+      "w": 7,
       "h": 6,
       "src": "/images/gallery1/DSC02737_PNglove.webp"
     },
     {
       "i": "DSC06368",
-      "x": 26,
+      "x": 28,
       "y": 32,
-      "w": 9,
+      "w": 10,
       "h": 5,
       "src": "/images/gallery1/DSC06368.webp"
     },
@@ -603,16 +569,16 @@
     },
     {
       "i": "m_Screenshot 2026-03-16 17.11.33_fritzi",
-      "x": 14,
-      "y": 144,
-      "w": 7,
+      "x": 36,
+      "y": 109,
+      "w": 9,
       "h": 5,
       "src": "/images/gallery1/m_Screenshot 2026-03-16 17.11.33_fritzi.webp"
     },
     {
       "i": "m_vlcsnap-2026-04-26-22h37m12s219",
       "x": 12,
-      "y": 59,
+      "y": 53,
       "w": 7,
       "h": 5,
       "src": "/images/gallery1/m_vlcsnap-2026-04-26-22h37m12s219.webp"
@@ -627,35 +593,67 @@
     },
     {
       "i": "vlcsnap-2026-05-04-14h28m16s589",
-      "x": 27,
-      "y": 146,
-      "w": 8,
-      "h": 4,
+      "x": 6,
+      "y": 117,
+      "w": 11,
+      "h": 6,
       "src": "/images/gallery1/vlcsnap-2026-05-04-14h28m16s589.webp"
     },
     {
       "i": "m_Screenshot 2026-03-17 11.22.05_up",
-      "x": 35,
-      "y": 137,
+      "x": 21,
+      "y": 91,
       "w": 9,
       "h": 6,
       "src": "/images/gallery1/m_Screenshot 2026-03-17 11.22.05_up.webp"
     },
     {
       "i": "m_bka12h08m27s749",
-      "x": 39,
-      "y": 71,
-      "w": 9,
-      "h": 5,
+      "x": 7,
+      "y": 46,
+      "w": 12,
+      "h": 7,
       "src": "/images/gallery1/m_bka12h08m27s749.webp"
     },
     {
       "i": "vlcsnap-2026-05-27-13h29m57s563",
       "x": 11,
-      "y": 40,
+      "y": 39,
       "w": 8,
-      "h": 6,
+      "h": 7,
       "src": "/images/gallery1/vlcsnap-2026-05-27-13h29m57s563.webp"
+    },
+    {
+      "i": "m_Eville-screenshot_acora_trapped",
+      "x": 2,
+      "y": 105,
+      "w": 12,
+      "h": 6,
+      "src": "/images/gallery1/m_Eville-screenshot_acora_trapped.webp"
+    },
+    {
+      "i": "m_bka2026-05-28 13.07.59",
+      "x": 37,
+      "y": 49,
+      "w": 11,
+      "h": 6,
+      "src": "/images/gallery1/m_bka2026-05-28 13.07.59.webp"
+    },
+    {
+      "i": "m_Screenshot 2026-03-13 11.46.30_up",
+      "x": 32,
+      "y": 55,
+      "w": 12,
+      "h": 5,
+      "src": "/images/gallery1/m_Screenshot 2026-03-13 11.46.30_up.webp"
+    },
+    {
+      "i": "m_Screenshot 2026-03-13 11.51.17_up",
+      "x": 32,
+      "y": 60,
+      "w": 13,
+      "h": 6,
+      "src": "/images/gallery1/m_Screenshot 2026-03-13 11.51.17_up.webp"
     }
   ]
 }
