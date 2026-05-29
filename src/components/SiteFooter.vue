@@ -78,6 +78,79 @@ function measureRuleChars() {
   ruleCharCount.value = Math.max(24, n)
 }
 
+const LEGAL_MOBILE_MEDIA = '(max-width: 767px)'
+
+/**
+ * Impressum-Full-Bleed auf Mobil — exakt die bewährte Logik der About-Seite
+ * (siehe GalleryListView: `syncRefAboutCanvasLayout`): Die fest 76 Zeichen breite
+ * Box wird absolut positioniert und per `transform: scale()` auf die verfügbare
+ * Breite skaliert, statt seitlich abgeschnitten zu werden. Die Canvas-Box bekommt
+ * die skalierten Maße, damit kein Layout-Overflow/Leerraum entsteht.
+ */
+function syncLegalFit() {
+  const root = footerInnerRef.value
+  const canvas = root?.querySelector('.legal-fit-canvas')
+  const box = canvas?.querySelector('.legal-box')
+  if (!(canvas instanceof HTMLElement) || !(box instanceof HTMLElement)) return
+
+  const mobile = window.matchMedia(LEGAL_MOBILE_MEDIA).matches
+  if (!mobile || !isLegalOpen.value) {
+    box.style.position = ''
+    box.style.top = ''
+    canvas.style.setProperty('--legal-scale', '1')
+    canvas.style.width = ''
+    canvas.style.height = ''
+    canvas.style.maxWidth = ''
+    canvas.style.marginLeft = ''
+    canvas.style.marginRight = ''
+    return
+  }
+
+  // 1) Unskaliert messen. Canvas-Maße ZURÜCKSETZEN, sonst misst clientWidth die
+  //    zuvor gesetzte (geschrumpfte) Breite → würde bei jedem Aufruf weiter
+  //    schrumpfen. Verfügbare Breite vom stabilen Eltern-Panel nehmen (wie About
+  //    die Wrap-Breite nutzt).
+  box.style.position = 'static'
+  box.style.top = ''
+  canvas.style.width = ''
+  canvas.style.height = ''
+  canvas.style.maxWidth = ''
+  canvas.style.setProperty('--legal-scale', '1')
+  void box.offsetWidth
+
+  const container = canvas.parentElement
+  const containerW =
+    container instanceof HTMLElement ? container.clientWidth : canvas.clientWidth
+  // 2px Atemraum gegen Subpixel-Abschnitt am Rand.
+  const fitWidth = Math.max(1, containerW - 2)
+  const natW = Math.max(
+    box.scrollWidth,
+    box.offsetWidth,
+    box.getBoundingClientRect().width,
+  )
+  const natH = box.offsetHeight
+  if (natW <= 0) return
+
+  // 2) Scale so wählen, dass die Box exakt in die verfügbare Breite passt
+  //    (kleiner Sicherheitsfaktor gegen Subpixel-Überlauf) — wie About.
+  const scale = Math.min(1, (fitWidth / natW) * 0.995)
+  canvas.style.setProperty('--legal-scale', String(scale))
+  void box.offsetWidth
+
+  // 3) Canvas = skalierte Maße, mittig — die Box wird per CSS (translateX(-50%))
+  //    in der Canvas zentriert und über --legal-scale skaliert.
+  const scaledW = Math.ceil(box.getBoundingClientRect().width)
+  const scaledH = Math.max(1, Math.ceil(natH * scale))
+  box.style.position = 'absolute'
+  box.style.top = '0'
+  canvas.style.width = `${scaledW}px`
+  canvas.style.height = `${scaledH}px`
+  canvas.style.maxWidth = '100%'
+  canvas.style.marginLeft = 'auto'
+  canvas.style.marginRight = 'auto'
+  scheduleResizeLenis()
+}
+
 function toggleLegal() {
   isLegalOpen.value = !isLegalOpen.value
 }
@@ -102,26 +175,38 @@ function scrollToLegalPanel() {
 
 watch(isLegalOpen, (open) => {
   nextTick(() => {
+    syncLegalFit()
     scheduleResizeLenis()
     if (open) scrollToLegalPanel()
   })
 })
 
+function onFooterResize() {
+  measureRuleChars()
+  syncLegalFit()
+}
+
 onMounted(() => {
   nextTick(() => {
     measureRuleChars()
+    syncLegalFit()
+    // Schrift erst nach dem Laden korrekt vermessen → erneut einpassen.
+    document.fonts?.ready?.then(() => {
+      measureRuleChars()
+      syncLegalFit()
+    })
     if (typeof ResizeObserver !== 'undefined' && footerInnerRef.value) {
-      footerResizeObserver = new ResizeObserver(() => measureRuleChars())
+      footerResizeObserver = new ResizeObserver(() => onFooterResize())
       footerResizeObserver.observe(footerInnerRef.value)
     }
   })
-  window.addEventListener('resize', measureRuleChars, { passive: true })
+  window.addEventListener('resize', onFooterResize, { passive: true })
 })
 
 onBeforeUnmount(() => {
   footerResizeObserver?.disconnect()
   footerResizeObserver = null
-  window.removeEventListener('resize', measureRuleChars)
+  window.removeEventListener('resize', onFooterResize)
 })
 </script>
 
@@ -131,7 +216,7 @@ onBeforeUnmount(() => {
     :class="{ 'site-footer-root--compact-top': compactTop }"
     aria-label="Seitenfuß"
   >
-    <div ref="footerInnerRef" class="site-footer-inner w-full px-[9%]">
+    <div ref="footerInnerRef" class="site-footer-inner w-full">
       <pre class="site-footer-pre site-footer-pre--rule" aria-hidden="true">{{ ruleLine }}</pre>
 
       <div class="site-footer-bar">
@@ -156,6 +241,7 @@ onBeforeUnmount(() => {
         role="region"
         aria-label="Legal notice and privacy policy"
       >
+        <div class="legal-fit-canvas">
         <div class="legal-box site-footer-pre site-footer-pre--legal">
           <div class="legal-box-line">{{ boxTop }}</div>
           <div class="legal-box-line">{{ boxLine('LEGAL NOTICE / IMPRESSUM') }}</div>
@@ -214,6 +300,7 @@ onBeforeUnmount(() => {
           </div>
           <div class="legal-box-line">{{ boxBottom }}</div>
         </div>
+        </div>
       </div>
     </div>
   </footer>
@@ -236,6 +323,9 @@ onBeforeUnmount(() => {
   max-width: 100%;
   margin: 0 auto;
   overflow-x: hidden;
+  /* Seitliche Einrückung (Desktop). Auf Mobil wird sie reduziert → volle Breite. */
+  padding-left: 9%;
+  padding-right: 9%;
 }
 
 .site-footer-pre {
@@ -367,5 +457,68 @@ onBeforeUnmount(() => {
 .site-footer-legal {
   width: 100%;
   overflow-x: auto;
+}
+
+/* Canvas = sichtbare, skalierte Box (analog .ref-about-canvas der About-Seite). */
+.legal-fit-canvas {
+  max-width: 100%;
+}
+
+/*
+ * Mobil (Portrait/Smartphone): volle Bildschirmbreite nutzen — exakt wie die
+ * About-Seite. Seitenpadding auf clamp(8px,1.6vw,14px) reduzieren (statt 9%),
+ * und die feste 76-Zeichen-Impressum-Box per transform:scale einpassen, statt
+ * sie abzuschneiden. Maße/Scale setzt JS (syncLegalFit) ⇢ kein Layout-Overflow.
+ */
+@media (max-width: 767px) {
+  .site-footer-inner {
+    padding-left: clamp(8px, 1.6vw, 14px);
+    padding-right: clamp(8px, 1.6vw, 14px);
+    overflow-x: hidden;
+    min-width: 0;
+  }
+
+  .site-footer-legal {
+    overflow-x: hidden;
+    min-width: 0;
+  }
+
+  /* Canvas = sichtbare, mittig zentrierte Box (JS setzt skalierte Maße). */
+  .legal-fit-canvas {
+    position: relative;
+    display: block;
+    overflow: hidden;
+    max-width: 100%;
+    /* Abstand zur LEGAL-Schaltfläche wandert auf die Canvas (Box wird absolut). */
+    margin: clamp(11px, 1.8vw, 18px) auto 0;
+  }
+
+  /*
+   * Exakt wie .ref-about-pre der About-Seite: absolut, volle Eigenbreite, mittig
+   * (left:50% + translateX(-50%)) und per --legal-scale auf die Canvas-Breite
+   * skaliert → füllt die volle Bildschirmbreite, sauber zentriert, kein Overflow.
+   */
+  .site-footer-pre--legal {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    display: block;
+    width: max-content;
+    max-width: none;
+    margin: 0;
+    transform: translateX(-50%) scale(var(--legal-scale, 1));
+    transform-origin: top center;
+  }
+
+  /* Gelbe Trennlinie und Tagline ebenfalls über die volle Breite, mittig. */
+  .site-footer-pre--rule {
+    text-align: center;
+  }
+
+  .site-footer-tagline {
+    overflow-wrap: normal;
+    word-break: normal;
+    text-wrap: pretty;
+  }
 }
 </style>

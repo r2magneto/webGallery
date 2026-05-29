@@ -139,8 +139,11 @@ function filenameFromSrc(src) {
 
 async function syncFolderToLayout({ statusPrefix = '', keepStatus = false } = {}) {
   if (!keepStatus) saveStatus.value = ''
-  const filenames = (await fetchManifestFilenames(props.configPath)).filter((n) =>
-    /\.(jpe?g|png|webp)$/i.test(String(n)),
+  const filenames = (await fetchManifestFilenames(props.configPath)).filter(
+    (n) =>
+      /\.(jpe?g|png|webp)$/i.test(String(n)) &&
+      // Proxy-Versionen (z.B. bild_proxy.webp) gehören nicht in den Editor/JSON.
+      !/_proxy\.webp$/i.test(String(n)),
   )
   const manifestSet = new Set(filenames)
 
@@ -791,6 +794,14 @@ async function onResetAspect(item) {
       >
         {{ saveStatus }}
       </p>
+      <a
+        href="https://cloud.umami.is/analytics/eu/websites"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="ml-auto rounded-lg border border-white/20 bg-slate-800 px-4 py-2 text-sm font-medium text-slate-100 hover:bg-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+      >
+        Visitors / Statistics
+      </a>
     </header>
 
     <main class="flex-1 p-4">

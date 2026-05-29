@@ -218,6 +218,12 @@ const lightboxIndex = ref(null)
 const viewerMode = ref('idle')
 
 const morphSrc = ref('')
+/**
+ * Performance: Vollansicht zeigt zwei gestapelte Ebenen – unten das gecachte
+ * Proxy (1024px, sofort scharf), oben das High-Res (2048px), das erst beim
+ * Öffnen lädt und nach `@load` weich eingeblendet wird.
+ */
+const isHighResLoaded = ref(false)
 const morphShellStyle = ref({})
 const morphInnerObjectFit = ref('cover')
 /** Reserviert die Textzeile im Morph (gleiche Höhe wie in der Vollansicht) */
@@ -277,6 +283,33 @@ const currentLightboxSrc = computed(() => {
   return layout.value[i]?.src ?? ''
 })
 
+/**
+ * Leitet den Proxy-Pfad (1024px) aus dem High-Res-Original ab, indem direkt vor
+ * der Dateiendung `_proxy` eingefügt wird – z.B. `…/bild.webp` → `…/bild_proxy.webp`.
+ * Query/Hash bleiben erhalten. Umkehrung: Original = Proxy ohne `_proxy`.
+ */
+function toProxySrc(src) {
+  if (!src) return src
+  return src.replace(/(\.[^./?#]+)([?#].*)?$/i, '_proxy$1$2')
+}
+
+/** Proxy-Quelle des aktuell gezeigten Bildes (gecached aus der Thumbnail-Liste). */
+const currentLightboxProxySrc = computed(() => toProxySrc(currentLightboxSrc.value))
+
+/**
+ * High-Res-Ebene ist fertig geladen → weich einblenden und die exakten nativen
+ * Maße (2048px) übernehmen, damit das Box-Modell unverändert präzise bleibt.
+ */
+function onHighResLoad(e) {
+  const el = e.target
+  const key = currentLightboxSrc.value
+  if (key && el?.naturalWidth > 0 && el?.naturalHeight > 0) {
+    naturalBySrc[key] = { w: el.naturalWidth, h: el.naturalHeight }
+    recomputeLbLayout()
+  }
+  isHighResLoaded.value = true
+}
+
 /** Rohtext inkl. Zeilenumbrüche (Anzeige); leer nur wenn trim() leer */
 const currentLightboxCaptionRaw = computed(() => {
   const i = lightboxIndex.value
@@ -330,16 +363,21 @@ const gridShellRef = ref(null)
  * bereits komplett im Bild, passiert nichts (unauffällig). So trifft der Zoom-Back
  * beim Schließen immer eine sichtbare Kachel und springt nicht zum Bildschirmrand.
  */
-function scrollActiveThumbnailIntoView(index) {
-  if (index == null || index < 0 || index >= layout.value.length) return
+/**
+ * Liefert die Ziel-Scrollposition (Y), bei der die aktive Kachel mit
+ * Sicherheitsrand sichtbar ist – oder null, wenn sie bereits komplett im Bild
+ * ist bzw. nicht gefunden wurde.
+ */
+function activeThumbnailTargetY(index) {
+  if (index == null || index < 0 || index >= layout.value.length) return null
   const id = layout.value[index]?.i
-  if (id == null) return
+  if (id == null) return null
   const el = document.querySelector(
     `[data-viewer-tile-id="${escapeAttrSelectorValue(id)}"]`,
   )
-  if (!(el instanceof HTMLElement)) return
+  if (!(el instanceof HTMLElement)) return null
   const r = el.getBoundingClientRect()
-  if (r.height <= 0 && r.width <= 0) return
+  if (r.height <= 0 && r.width <= 0) return null
 
   const vh = window.innerHeight
   const margin = Math.min(vh * 0.12, 96)
@@ -353,15 +391,34 @@ function scrollActiveThumbnailIntoView(index) {
   } else if (r.bottom > vh - margin) {
     delta = r.bottom - (vh - margin)
   } else {
-    return
+    return null
   }
+  return Math.max(0, window.scrollY + delta)
+}
 
-  const target = window.scrollY + delta
+function scrollActiveThumbnailIntoView(index) {
+  const target = activeThumbnailTargetY(index)
+  if (target == null) return
   scrollWindowToY(target, {
     force: true,
     duration: 0.9,
     easing: (t) => 1 - (1 - t) ** 3,
   })
+}
+
+/**
+ * Sofort (synchron, ohne Animation) zur aktiven Kachel scrollen – für den
+ * Moment des Schließens, damit der Zoom-Zurück die Kachel an korrekter Position
+ * trifft. Auf Mobil wird während des Blätterns NICHT gescrollt (siehe Watch),
+ * deshalb holen wir die Synchronisation hier einmalig nach.
+ */
+function syncActiveThumbnailInstant(index) {
+  const target = activeThumbnailTargetY(index)
+  if (target == null) return
+  // Nativ + synchron → getBoundingClientRect direkt danach ist korrekt.
+  window.scrollTo(0, target)
+  // Lenis-Zielwert angleichen, damit es nach dem Start nicht zurückspringt.
+  scrollWindowToY(target, { force: true, immediate: true })
 }
 
 function fitContain(nw, nh, maxW, maxH) {
@@ -461,18 +518,25 @@ function prefetchNatural(src) {
   if (!src || naturalBySrc[src]) return
   const im = new Image()
   im.onload = () => {
-    if (im.naturalWidth > 0 && im.naturalHeight > 0) {
+    // Proxy und High-Res haben dasselbe Seitenverhältnis → fürs Box-Modell
+    // reicht das gecachte, datensparsame Proxy. Schlüssel bleibt das Original.
+    if (im.naturalWidth > 0 && im.naturalHeight > 0 && !naturalBySrc[src]) {
       naturalBySrc[src] = { w: im.naturalWidth, h: im.naturalHeight }
     }
   }
-  im.src = src
+  im.src = toProxySrc(src)
 }
 
 function onLightboxImgLoad(e) {
   const el = e.target
-  const src = el?.currentSrc || el?.src
-  if (!src || !el.naturalWidth) return
-  naturalBySrc[src] = { w: el.naturalWidth, h: el.naturalHeight }
+  if (!el?.naturalWidth || !el?.naturalHeight) return
+  // Proxy-Ebene: nur das (identische) Seitenverhältnis übernehmen, falls noch
+  // unbekannt. Die echten High-Res-Maße kommen über onHighResLoad.
+  const key = currentLightboxSrc.value
+  if (key && !naturalBySrc[key]) {
+    naturalBySrc[key] = { w: el.naturalWidth, h: el.naturalHeight }
+    recomputeLbLayout()
+  }
 }
 
 /**
@@ -565,13 +629,11 @@ function computeLightboxLayout(index) {
     capH = hasCaption ? measureCaptionHeight(capRaw, captionWidth) : 0
     const reserve = hasCaption ? GAP + capH : 0
     const innerMaxH = Math.max(1, slotMaxH - 2 * PAD - reserve)
-    // Nicht über die native Größe hochskalieren: kleines Bild bleibt original.
-    const fit = fitContain(
-      nw,
-      nh,
-      Math.min(innerMaxW, nw),
-      Math.min(innerMaxH, nh),
-    )
+    // Rahmen füllt den verfügbaren Platz nach Seitenverhältnis – bewusst OHNE
+    // Begrenzung auf die native Pixelgröße. So liefert das Proxy (1024px) exakt
+    // dieselben Rahmenmaße wie das spätere High-Res (2048px) → kein Sprung beim
+    // Crossfade. Das Bild selbst skaliert per object-fit hoch (siehe CSS).
+    const fit = fitContain(nw, nh, innerMaxW, innerMaxH)
     iw = fit.w
     ih = fit.h
     captionWidth = iw
@@ -630,6 +692,7 @@ function openLightbox(index, event) {
   clearCaptionFadeBeforeCloseTimer()
   lbCaptionFastHide.value = false
   infoVisible.value = false
+  isHighResLoaded.value = false
   morphShellOpacity.value = 1
   lbBackdropOpacity.value = 1
   const src = layout.value[index]?.src ?? ''
@@ -663,7 +726,9 @@ function openLightbox(index, event) {
     nw = 1600
     nh = 900
   }
-  if (src && imgEl.naturalWidth > 0 && imgEl.naturalHeight > 0) {
+  // Thumbnail ist das Proxy → nur das Seitenverhältnis übernehmen, falls die
+  // echten High-Res-Maße noch nicht vorliegen (sonst nicht "downgraden").
+  if (src && imgEl.naturalWidth > 0 && imgEl.naturalHeight > 0 && !naturalBySrc[src]) {
     naturalBySrc[src] = { w: imgEl.naturalWidth, h: imgEl.naturalHeight }
   }
 
@@ -682,7 +747,9 @@ function openLightbox(index, event) {
     (window.innerHeight - openInsets.top - openInsets.bottom - frameH) / 2
   const morphStartH = thumb.height
 
-  morphSrc.value = src
+  // Zoom nutzt das gecachte Proxy → verzögerungsfrei und scharf.
+  morphSrc.value = toProxySrc(src)
+  isHighResLoaded.value = false
   lightboxIndex.value = index
   viewerMode.value = 'opening'
 
@@ -723,6 +790,11 @@ function openLightbox(index, event) {
 }
 
 function runCloseLightboxMorph() {
+  // Mobil wurde während des Blätterns bewusst nicht gescrollt (URL-Leiste). Jetzt,
+  // beim Schließen, die aktive Kachel synchron in den Viewport holen, damit der
+  // Zoom-Zurück sie an korrekter Position trifft (hinter dem Backdrop verdeckt).
+  if (isMobileLayout.value) syncActiveThumbnailInstant(lightboxIndex.value)
+
   const item = layout.value[lightboxIndex.value]
   const id = item?.i
   const thumbImg = id
@@ -767,7 +839,7 @@ function runCloseLightboxMorph() {
   morphShellOpacity.value = 1
   lbBackdropOpacity.value = 1
   viewerMode.value = 'closing'
-  morphSrc.value = currentLightboxSrc.value
+  morphSrc.value = currentLightboxProxySrc.value
 
   setMorphShell(
     {
@@ -932,10 +1004,11 @@ async function loadGalleryFromConfig() {
   revealTiles.value = false
   loadState.value = 'loading'
   const items = await fetchGalleryLayoutItems(props.configPath)
-  layout.value = items.map((it) => ({
-    ...it,
-    src: resolveGalleryImageSrc(it.src, props.configPath),
-  }))
+  layout.value = items.map((it) => {
+    const src = resolveGalleryImageSrc(it.src, props.configPath)
+    // Thumbnails laden ausschließlich das kleine Proxy → schneller Erststart.
+    return { ...it, src, proxySrc: toProxySrc(src) }
+  })
   loadState.value = 'idle'
 
   await nextTick()
@@ -981,6 +1054,15 @@ watch(viewerMode, (m) => {
   }
 })
 
+/*
+ * Bildwechsel (Next/Prev): High-Res-Einblendung sofort zurücksetzen. Da die
+ * Fade-Ebene per :key neu erzeugt wird, bricht der Browser den alten High-Res-
+ * Download ab; der neue startet erst mit dem frischen <img> der neuen Ansicht.
+ */
+watch(lightboxIndex, () => {
+  isHighResLoaded.value = false
+})
+
 watch(
   () => [lightboxIndex.value, viewerMode.value, layout.value.length],
   () => {
@@ -1000,6 +1082,10 @@ watch(
   () => [lightboxIndex.value, viewerMode.value],
   () => {
     if (viewerMode.value !== 'viewing' || lightboxIndex.value == null) return
+    // Mobil: beim Bildwechsel das Fenster NICHT scrollen – jeder Fenster-Scroll
+    // blendet sonst die URL-Leiste wieder ein. Die Kachel-Synchronisation fürs
+    // Zoom-Zurück passiert einmalig beim Schließen (syncActiveThumbnailInstant).
+    if (isMobileLayout.value) return
     nextTick(() => {
       requestAnimationFrame(() => {
         scrollActiveThumbnailIntoView(lightboxIndex.value)
@@ -1146,7 +1232,7 @@ onBeforeUnmount(() => {
                 :style="tileMediaStyle(item)"
               >
                 <img
-                  :src="item.src"
+                  :src="item.proxySrc"
                   :alt="item.i"
                   draggable="false"
                   class="viewer-tile-img pointer-events-none absolute inset-0 h-full w-full object-cover"
@@ -1243,12 +1329,22 @@ onBeforeUnmount(() => {
                     :style="lbFrameStyle"
                   >
                     <div class="lb-img-area">
+                      <!-- Ebene 1 (unten): gecachtes Proxy → sofort scharf, trägt den Zoom. -->
+                      <img
+                        :src="currentLightboxProxySrc"
+                        :alt="layout[lightboxIndex]?.i"
+                        class="lb-main-img lb-img-proxy shadow-2xl"
+                        draggable="false"
+                        @load="onLightboxImgLoad"
+                      />
+                      <!-- Ebene 2 (oben): High-Res, lädt erst beim Öffnen, blendet nach @load weich ein. -->
                       <img
                         :src="currentLightboxSrc"
                         :alt="layout[lightboxIndex]?.i"
-                        class="lb-main-img shadow-2xl"
+                        class="lb-main-img lb-img-hires"
+                        :class="{ 'is-loaded': isHighResLoaded }"
                         draggable="false"
-                        @load="onLightboxImgLoad"
+                        @load="onHighResLoad"
                       />
                     </div>
                     <div
@@ -1558,6 +1654,7 @@ onBeforeUnmount(() => {
 }
 
 .lb-img-area {
+  position: relative;
   display: flex;
   flex: 1 1 auto;
   align-items: center;
@@ -1567,11 +1664,49 @@ onBeforeUnmount(() => {
 
 .lb-main-img {
   display: block;
-  width: auto;
-  height: auto;
-  max-width: 100%;
-  max-height: 100%;
+  /*
+   * Bild füllt den (vom Box-Modell exakt aufs Seitenverhältnis dimensionierten)
+   * Bildbereich vollständig aus – Upscaling über die native Größe hinaus erlaubt.
+   * Gilt auch für die Morph-Contain-Phase, damit Zoom-Ende und Vollansicht
+   * pixelgenau übereinstimmen.
+   */
+  width: 100%;
+  height: 100%;
   object-fit: contain;
+}
+
+/*
+ * Zwei-Ebenen-Struktur der Vollansicht: Proxy und High-Res liegen exakt
+ * deckungsgleich übereinander und füllen den (vom Box-Modell definierten)
+ * Bildbereich. object-fit: contain erbt von .lb-main-img → da der Bereich
+ * bereits das Bildseitenverhältnis hat, sitzt das Bild pixelgenau wie zuvor.
+ */
+.lb-img-proxy,
+.lb-img-hires {
+  position: absolute;
+  inset: 0;
+  /*
+   * Beide Ebenen nehmen mathematisch exakt dieselbe Box ein (= Bildbereich des
+   * Rahmens). width/height: 100% + object-fit: contain → identische Einpassung
+   * und Proportionen. max-*: none hebt die .lb-main-img-Begrenzung auf die native
+   * Dateigröße auf, sodass auch das 1024px-Proxy den Rahmen voll ausfüllt
+   * (Upscaling erlaubt) und der Crossfade zu 100 % deckungsgleich bleibt.
+   */
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  object-fit: contain;
+}
+
+/* High-Res standardmäßig unsichtbar, blendet nach dem Laden weich ein. */
+.lb-img-hires {
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+.lb-img-hires.is-loaded {
+  opacity: 1;
 }
 
 /* Infotext: linksbündig, unter dem Bild, innerhalb des gelben Rahmens. */
