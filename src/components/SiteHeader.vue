@@ -591,28 +591,26 @@ onMounted(async () => {
 .ansi-header-root {
   position: relative;
   z-index: 40;
+  overflow: visible;
 }
 
 .ansi-header-wrap {
+  box-sizing: border-box;
   width: 100%;
+  overflow: visible;
   display: flex;
   justify-content: center;
   padding: clamp(8px, 1.8vw, 16px) clamp(8px, 1.6vw, 14px)
     clamp(6px, 1.2vw, 12px);
-  transform: translateZ(0);
 }
 
 .ansi-header-canvas {
-  background: transparent;
+  box-sizing: border-box;
   width: 100%;
-  max-width: 100vw;
+  overflow: visible;
   display: flex;
   justify-content: center;
-  overflow: hidden;
-  /* Ziel: ~120% Standard, reagiert spürbar auf Fensterbreite */
-  --ansi-scale: clamp(0.9, calc(0.76 + 0.00032 * 100vw), 1.22);
-  transform: scale(var(--ansi-scale));
-  transform-origin: top center;
+  background: transparent;
 }
 
 .ansi-header-scanlines {
@@ -630,13 +628,12 @@ onMounted(async () => {
 }
 
 .ansi-pre {
-  margin: 0;
   white-space: pre;
+  margin: 0 auto;
+  display: inline-block;
   font-family: 'Web437 IBM VGA 9x16', 'Web437 IBM VGA 8x14 2x',
     'Web437 IBM VGA 8x14', ui-monospace, monospace;
-  /* reacts to window width */
-  font-size: clamp(10px, 1.5vw, 20px);
-  /* unitless: scales with font-size; slight overlap to hide hairlines */
+  font-size: clamp(12px, 1.5vw, 18px);
   line-height: 0.99;
   letter-spacing: -0.5px;
   color: #e5e7eb;
@@ -646,6 +643,13 @@ onMounted(async () => {
   shape-rendering: crispEdges;
   -webkit-font-smoothing: subpixel-antialiased;
   -moz-osx-font-smoothing: auto;
+}
+
+@media (max-width: 500px) {
+  .ansi-pre {
+    /* 500px × 2.4vw = 12px — deckt sich mit clamp(12px, …) für nahtlosen Übergang */
+    font-size: 2.4vw !important;
+  }
 }
 
 .ansi-pre::selection,
