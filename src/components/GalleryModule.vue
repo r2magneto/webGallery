@@ -27,12 +27,6 @@ import { createGridHostWidthObserver } from '../utils/gridHostResize.js'
 import GalleryScrollbar from './GalleryScrollbar.vue'
 import { useGasPedalScroll } from '../composables/useGasPedalScroll.js'
 import { useMobileLayout } from '../composables/useMobileLayout.js'
-import { Swiper, SwiperSlide } from 'swiper/vue'
-import { Keyboard, Zoom } from 'swiper/modules'
-import 'swiper/css'
-import 'swiper/css/zoom'
-
-const lbSwiperModules = [Keyboard, Zoom]
 
 const props = defineProps({
   /** Layout-JSON im public-Ordner (z. B. layout.json). */
@@ -42,27 +36,100 @@ const props = defineProps({
   },
 })
 
-/** Padding: 4 % links/rechts; oben/unten je 0,5 % Bandhöhe (2× → ~99 % Bildhöhe) */
-const LB_PAD_X_FRAC_DESKTOP = 0.04
-const LB_PAD_Y_FRAC_DESKTOP = 0.005
-const LB_PAD_X_FRAC_MOBILE = 0.02
-const LB_PAD_Y_FRAC_MOBILE = 0.0025
-
 const { isMobileLayout } = useMobileLayout()
 
-function lbPadXFrac() {
-  return isMobileLayout.value ? LB_PAD_X_FRAC_MOBILE : LB_PAD_X_FRAC_DESKTOP
+/** Querformat-Erkennung (nur für die mobile Steuerung relevant). */
+const isLandscape = ref(false)
+let orientationMq = null
+
+function syncOrientation() {
+  isLandscape.value =
+    typeof window !== 'undefined'
+      ? window.matchMedia('(orientation: landscape)').matches
+      : false
 }
 
-function lbPadYFrac() {
-  return isMobileLayout.value ? LB_PAD_Y_FRAC_MOBILE : LB_PAD_Y_FRAC_DESKTOP
+const isMobilePortrait = computed(() => isMobileLayout.value && !isLandscape.value)
+const isMobileLandscape = computed(() => isMobileLayout.value && isLandscape.value)
+
+/** Infotext im Mobil-Landscape standardmäßig aus; per Info-Button einklappbar. */
+const infoVisible = ref(false)
+
+function toggleInfo() {
+  infoVisible.value = !infoVisible.value
 }
+
+/** Mobil-Icons liegen wie die Cursor-Grafiken in public/assets (relative Base). */
+function iconUrl(name) {
+  return `${import.meta.env.BASE_URL}assets/${name}`
+}
+
+/**
+ * Festes Box-Modell der Vollansicht (statt proportionaler Bänder):
+ * Gelber Rahmen = Bild + fixer 10px-Abstand (oben/links/rechts).
+ * Mit Infotext: Bild → 10px → Text (linksbündig) → 10px → Rahmen-Unterkante.
+ */
+const LB_FRAME_PAD = 10
+const LB_CAPTION_GAP = 10
 /** Gelbe Outline in der Vollansicht (Morph-Ende = Lightbox) */
 const LB_FULL_OUTLINE_PX = 1
-/** Abstand Caption-Overlay zum linken/unteren Bildrand (im Bild-Wrapper) */
-const LB_CAPTION_INSET = 16
 const LB_VIEWPORT_W_FRAC = 0.94
 const LB_VIEWPORT_H_FRAC = 0.88
+
+/**
+ * Vertikale Reserven (px) für die Vollansicht, je nach Modus. Sie definieren das
+ * Band, in dem der Rahmen zentriert wird, und müssen mit den CSS-Paddings der
+ * Overlay übereinstimmen (siehe `.lb-overlay--portrait` / `--landscape`).
+ *
+ * - Desktop: symmetrisch aus LB_VIEWPORT_H_FRAC → ~88 % nutzbar.
+ * - Mobil-Portrait: unten Platz für die Icon-Reihe (left/close/right).
+ * - Mobil-Landscape: oben Info/Close, unten Prev/Next → verhindert zugleich das
+ *   Abschneiden, weil der Rahmen garantiert in (100dvh − Reserven) passt.
+ */
+const LB_PORTRAIT_INSET_TOP = 8
+const LB_PORTRAIT_INSET_BOTTOM = 104
+/*
+ * Landscape: Buttons liegen in den ECKEN, nicht in einem oben/unten-Band.
+ * Vertikal brauchen wir daher nur einen schmalen Sicherheitsabstand zum
+ * Displayrand (URL-Leiste über dvh abgedeckt). Stattdessen reservieren wir
+ * links/rechts so viel Breite, dass der Rahmen an die Icons stößt, aber sie
+ * nicht überdeckt (Icon 40px + 2×6px Padding ≈ 52px + Rand + kleiner Spalt).
+ */
+const LB_LANDSCAPE_INSET_TOP = 12
+const LB_LANDSCAPE_INSET_BOTTOM = 12
+const LB_LANDSCAPE_INSET_SIDE = 64
+
+function lbInsets() {
+  if (isMobileLandscape.value) {
+    return {
+      top: LB_LANDSCAPE_INSET_TOP,
+      bottom: LB_LANDSCAPE_INSET_BOTTOM,
+      left: LB_LANDSCAPE_INSET_SIDE,
+      right: LB_LANDSCAPE_INSET_SIDE,
+    }
+  }
+  if (isMobilePortrait.value) {
+    const sx =
+      typeof window !== 'undefined'
+        ? (window.innerWidth * (1 - LB_VIEWPORT_W_FRAC)) / 2
+        : 0
+    return {
+      top: LB_PORTRAIT_INSET_TOP,
+      bottom: LB_PORTRAIT_INSET_BOTTOM,
+      left: sx,
+      right: sx,
+    }
+  }
+  const my =
+    typeof window !== 'undefined'
+      ? (window.innerHeight * (1 - LB_VIEWPORT_H_FRAC)) / 2
+      : 0
+  const mx =
+    typeof window !== 'undefined'
+      ? (window.innerWidth * (1 - LB_VIEWPORT_W_FRAC)) / 2
+      : 0
+  return { top: my, bottom: my, left: mx, right: mx }
+}
 
 /** Morph: kurz, knackig, leichter Bounce beim Aufzoomen */
 const SPRING_OPEN = 'cubic-bezier(0.30, 1.1, 0.42, 1)'
@@ -153,13 +220,20 @@ const viewerMode = ref('idle')
 const morphSrc = ref('')
 const morphShellStyle = ref({})
 const morphInnerObjectFit = ref('cover')
+/** Reserviert die Textzeile im Morph (gleiche Höhe wie in der Vollansicht) */
+const morphCaptionReserve = ref(false)
+/** Höhe der reservierten Textzeile in px (gemessen) */
+const morphCaptionH = ref(0)
+/** Textsichtbarkeit (Höhe bleibt reserviert, auch wenn ausgeblendet) */
 const morphShowCaption = ref(false)
 const morphCaptionText = ref('')
 const morphInnerTransition = ref('none')
-const lbContentImgRef = ref(null)
 const lbContentWrapRef = ref(null)
 const morphShellRef = ref(null)
 const morphImgRef = ref(null)
+
+/** Aktuelles, deterministisch berechnetes Box-Layout der Vollansicht. */
+const lbLayout = ref(null)
 
 /** src → { w, h } für sofortige Lightbox-Rahmengröße ohne Layout-Sprung */
 const naturalBySrc = reactive({})
@@ -211,20 +285,28 @@ const currentLightboxCaptionRaw = computed(() => {
   return v != null ? String(v) : ''
 })
 
-const hasLightboxCaption = computed(
-  () => currentLightboxCaptionRaw.value.trim() !== '',
-)
-
 function lightboxCaptionRawForItem(item) {
   const v = item?.caption
   return v != null ? String(v) : ''
 }
 
-function hasLightboxCaptionForItem(item) {
-  return lightboxCaptionRawForItem(item).trim() !== ''
+/**
+ * Soll der Infotext im gelben Rahmen Platz bekommen?
+ * - Desktop & Mobil-Portrait: ja (sofern vorhanden).
+ * - Mobil-Landscape: nur wenn der Info-Button aktiv ist.
+ */
+function isCaptionInFrame(index) {
+  const item = layout.value[index]
+  if (lightboxCaptionRawForItem(item).trim() === '') return false
+  if (isMobileLandscape.value) return infoVisible.value
+  return true
 }
 
-const lbSwiperInstance = ref(null)
+/** Caption-Anzeige für den aktuellen Index (Template). */
+const captionInFrame = computed(() => {
+  if (lightboxIndex.value == null) return false
+  return isCaptionInFrame(lightboxIndex.value)
+})
 
 function clearMorphTimer() {
   if (morphFinishTimer != null) {
@@ -239,8 +321,16 @@ function escapeAttrSelectorValue(s) {
 
 const gridShellRef = ref(null)
 
-/** Lightbox ↔ Grid: aktives Thumbnail vertikal in den Viewport zentrieren (Zoom-Back trifft sichtbare Kachel). */
-function scrollThumbnailIntoViewCentered(index) {
+/**
+ * Lightbox ↔ Grid: aktives Thumbnail im Hintergrund sanft im Viewport halten.
+ *
+ * Während der Vollansicht ist Lenis gestoppt (Hintergrund-Scroll gesperrt), darum
+ * `force: true`, damit der Programm-Scroll trotzdem läuft. Es wird nur so weit
+ * gescrollt, dass die aktive Kachel mit Sicherheitsrand sichtbar wird – ist sie
+ * bereits komplett im Bild, passiert nichts (unauffällig). So trifft der Zoom-Back
+ * beim Schließen immer eine sichtbare Kachel und springt nicht zum Bildschirmrand.
+ */
+function scrollActiveThumbnailIntoView(index) {
   if (index == null || index < 0 || index >= layout.value.length) return
   const id = layout.value[index]?.i
   if (id == null) return
@@ -250,10 +340,26 @@ function scrollThumbnailIntoViewCentered(index) {
   if (!(el instanceof HTMLElement)) return
   const r = el.getBoundingClientRect()
   if (r.height <= 0 && r.width <= 0) return
-  const cy = r.top + r.height / 2
-  const target = window.scrollY + cy - window.innerHeight / 2
+
+  const vh = window.innerHeight
+  const margin = Math.min(vh * 0.12, 96)
+  let delta = 0
+
+  if (r.height >= vh - 2 * margin) {
+    // Kachel höher als der sichtbare Bereich → mittig setzen.
+    delta = r.top + r.height / 2 - vh / 2
+  } else if (r.top < margin) {
+    delta = r.top - margin
+  } else if (r.bottom > vh - margin) {
+    delta = r.bottom - (vh - margin)
+  } else {
+    return
+  }
+
+  const target = window.scrollY + delta
   scrollWindowToY(target, {
-    duration: 1.35,
+    force: true,
+    duration: 0.9,
     easing: (t) => 1 - (1 - t) ** 3,
   })
 }
@@ -284,6 +390,8 @@ function clearMorphShell() {
   lbCaptionFastHide.value = false
   morphShellStyle.value = {}
   morphShowCaption.value = false
+  morphCaptionReserve.value = false
+  morphCaptionH.value = 0
   morphCaptionText.value = ''
   morphInnerObjectFit.value = 'cover'
   morphInnerTransition.value = 'none'
@@ -298,6 +406,8 @@ function setMorphShell(
     morphKind = 'open',
     outlinePx = 4,
     showCaption = false,
+    captionReserve = false,
+    captionH = 0,
     captionText = '',
     objectFit = 'cover',
     appendCloseOpacityFade = false,
@@ -305,6 +415,8 @@ function setMorphShell(
 ) {
   if (!r) return
   morphShowCaption.value = showCaption
+  morphCaptionReserve.value = captionReserve
+  morphCaptionH.value = captionH
   morphCaptionText.value = captionText
   morphInnerObjectFit.value = objectFit
   const ms = morphTimingMs(morphKind)
@@ -332,8 +444,6 @@ function setMorphShell(
     width: `${r.width}px`,
     height: `${r.height}px`,
     zIndex: '290',
-    display: 'flex',
-    flexDirection: 'column',
     overflow: 'hidden',
     outlineStyle: 'solid',
     outlineColor: '#facc15',
@@ -366,14 +476,63 @@ function onLightboxImgLoad(e) {
 }
 
 /**
- * Vollansicht: gelber Rahmen umschließt nur das Bild (Caption als Overlay im Bild).
+ * Misst die Texthöhe der Caption bei gegebener Innenbreite (px), mit denselben
+ * Typo-Werten wie `.lb-caption-inner`. Nötig, damit der Rahmen die Textzeile
+ * exakt einplanen kann (festes Box-Modell statt geschätzter Proportionen).
  */
-function lightboxLayoutForIndex(index) {
+let captionMeasureEl = null
+
+function measureCaptionHeight(text, widthPx) {
+  if (!text || widthPx <= 0 || typeof document === 'undefined') return 0
+  if (!captionMeasureEl) {
+    captionMeasureEl = document.createElement('div')
+    captionMeasureEl.setAttribute('aria-hidden', 'true')
+    const s = captionMeasureEl.style
+    s.position = 'fixed'
+    s.left = '-99999px'
+    s.top = '0'
+    s.visibility = 'hidden'
+    s.pointerEvents = 'none'
+    s.zIndex = '-1'
+    s.boxSizing = 'border-box'
+    s.padding = '2px 6px'
+    s.fontSize = '10px'
+    s.lineHeight = '1.3'
+    s.whiteSpace = 'pre-wrap'
+    s.wordBreak = 'break-word'
+    document.body.appendChild(captionMeasureEl)
+  }
+  captionMeasureEl.style.width = `${Math.max(1, Math.floor(widthPx))}px`
+  captionMeasureEl.textContent = text
+  return Math.ceil(captionMeasureEl.getBoundingClientRect().height)
+}
+
+function disposeCaptionMeasureEl() {
+  if (captionMeasureEl?.parentNode) {
+    captionMeasureEl.parentNode.removeChild(captionMeasureEl)
+  }
+  captionMeasureEl = null
+}
+
+/**
+ * Festes Box-Modell der Vollansicht (einzige Quelle für Rahmen UND Morph):
+ *
+ *   ┌─ gelber Rahmen ─────────────┐
+ *   │   10px Abstand              │
+ *   │   [ Bild  imageW × imageH ] │
+ *   │   10px Abstand              │
+ *   │   Infotext (linksbündig)    │  ← nur falls vorhanden
+ *   │   10px Abstand              │
+ *   └─────────────────────────────┘
+ *
+ * Bildgröße = contain in den verbleibenden Platz; Rahmengröße = Bild + fixe
+ * Abstände + (optional) gemessene Texthöhe. Dadurch skaliert der Rahmen exakt
+ * mit dem Bild und nichts wird abgeschnitten.
+ */
+function computeLightboxLayout(index) {
   if (index == null || index < 0 || index >= layout.value.length) return null
   const item = layout.value[index]
   const src = item?.src
-  const slotMaxW = window.innerWidth * LB_VIEWPORT_W_FRAC
-  const slotMaxH = window.innerHeight * LB_VIEWPORT_H_FRAC
   const dim = src ? naturalBySrc[src] : null
   let nw = dim?.w
   let nh = dim?.h
@@ -381,34 +540,74 @@ function lightboxLayoutForIndex(index) {
     nw = 1600
     nh = 900
   }
-  const padX = lbPadXFrac()
-  const padY = lbPadYFrac()
-  const innerMaxW = slotMaxW * (1 - 2 * padX)
-  const innerMaxH = slotMaxH * (1 - 2 * padY)
-  const { w: iw, h: ih } = fitContain(nw, nh, innerMaxW, innerMaxH)
-  const bandW = Math.min(slotMaxW, Math.ceil(iw / (1 - 2 * padX)))
-  const bandH = Math.min(slotMaxH, Math.ceil(ih / (1 - 2 * padY)))
-  const shellW = bandW
-  const shellH = bandH
-  return {
-    shellW,
-    shellH,
-    bandW,
-    bandH,
+
+  const capRaw = lightboxCaptionRawForItem(item)
+  // Im Mobil-Landscape wird der Text nur eingeplant, wenn Info aktiv ist.
+  const hasCaption = isCaptionInFrame(index)
+
+  const PAD = LB_FRAME_PAD
+  const GAP = LB_CAPTION_GAP
+  const insets = lbInsets()
+  // Breite: Viewport − seitliche Reserven (Landscape: Platz für die Icons,
+  // sonst der symmetrische LB_VIEWPORT_W_FRAC-Rand).
+  const slotMaxW = Math.max(1, window.innerWidth - insets.left - insets.right)
+  // Rahmen passt garantiert in (Viewport − Reserven) → kein Abschneiden (Landscape-Fix).
+  const slotMaxH = Math.max(1, window.innerHeight - insets.top - insets.bottom)
+  const innerMaxW = Math.max(1, slotMaxW - 2 * PAD)
+
+  // Iterativ: Textbreite hängt von der Bildbreite ab, Bildhöhe von der Texthöhe.
+  // Zwei, drei Durchläufe konvergieren stabil.
+  let capH = 0
+  let iw = 0
+  let ih = 0
+  let captionWidth = innerMaxW
+  for (let pass = 0; pass < 3; pass++) {
+    capH = hasCaption ? measureCaptionHeight(capRaw, captionWidth) : 0
+    const reserve = hasCaption ? GAP + capH : 0
+    const innerMaxH = Math.max(1, slotMaxH - 2 * PAD - reserve)
+    // Nicht über die native Größe hochskalieren: kleines Bild bleibt original.
+    const fit = fitContain(
+      nw,
+      nh,
+      Math.min(innerMaxW, nw),
+      Math.min(innerMaxH, nh),
+    )
+    iw = fit.w
+    ih = fit.h
+    captionWidth = iw
   }
+
+  const imageW = Math.max(1, Math.round(iw))
+  const imageH = Math.max(1, Math.round(ih))
+  const captionH = hasCaption ? capH : 0
+  const frameW = imageW + 2 * PAD
+  const frameH = imageH + 2 * PAD + (hasCaption ? GAP + captionH : 0)
+
+  return { imageW, imageH, captionH, frameW, frameH, hasCaption }
 }
 
-function lightboxFrameCss(index) {
-  const L = lightboxLayoutForIndex(index)
+function recomputeLbLayout() {
+  if (lightboxIndex.value == null || viewerMode.value === 'idle') {
+    lbLayout.value = null
+    return
+  }
+  lbLayout.value = computeLightboxLayout(lightboxIndex.value)
+}
+
+const lbFrameStyle = computed(() => {
+  const L = lbLayout.value
   if (!L) return {}
+  // Rahmen bekommt feste Breite UND Höhe → definiter Kontext für das Bild,
+  // damit dessen max-height: 100% sauber auflöst (kein Kollabieren in Flexbox).
+  // max-* deckeln nur gegen den Viewport; ein kleines Bild wird nie gestaucht.
   return {
-    width: `${L.shellW}px`,
-    height: `${L.shellH}px`,
-    minHeight: `${L.shellH}px`,
+    width: `${L.frameW}px`,
+    height: `${L.frameH}px`,
     maxWidth: 'min(95vw, 100%)',
+    maxHeight: '100%',
     boxSizing: 'border-box',
   }
-}
+})
 
 function scheduleMorphFinish(modeAfter, morphKind) {
   clearMorphTimer()
@@ -430,6 +629,7 @@ function openLightbox(index, event) {
   clearMorphCloseFadeTimer()
   clearCaptionFadeBeforeCloseTimer()
   lbCaptionFastHide.value = false
+  infoVisible.value = false
   morphShellOpacity.value = 1
   lbBackdropOpacity.value = 1
   const src = layout.value[index]?.src ?? ''
@@ -467,15 +667,19 @@ function openLightbox(index, event) {
     naturalBySrc[src] = { w: imgEl.naturalWidth, h: imgEl.naturalHeight }
   }
 
-  const L = lightboxLayoutForIndex(index)
+  const L = computeLightboxLayout(index)
   if (!L) {
     lightboxIndex.value = index
     viewerMode.value = 'viewing'
     return
   }
-  const { shellW, shellH } = L
-  const finalLeft = (window.innerWidth - shellW) / 2
-  const finalTop = (window.innerHeight - shellH) / 2
+  lbLayout.value = L
+  const { frameW, frameH, hasCaption, captionH } = L
+  const openInsets = lbInsets()
+  const finalLeft = (window.innerWidth - frameW) / 2
+  const finalTop =
+    openInsets.top +
+    (window.innerHeight - openInsets.top - openInsets.bottom - frameH) / 2
   const morphStartH = thumb.height
 
   morphSrc.value = src
@@ -488,7 +692,9 @@ function openLightbox(index, event) {
       withTransition: false,
       morphKind: 'open',
       outlinePx: LB_FULL_OUTLINE_PX,
-      showCaption: !!cap,
+      showCaption: false,
+      captionReserve: false,
+      captionH,
       captionText: capRaw,
       objectFit: 'cover',
     },
@@ -498,12 +704,14 @@ function openLightbox(index, event) {
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         setMorphShell(
-          { top: finalTop, left: finalLeft, width: shellW, height: shellH },
+          { top: finalTop, left: finalLeft, width: frameW, height: frameH },
           {
             withTransition: true,
             morphKind: 'open',
             outlinePx: LB_FULL_OUTLINE_PX,
             showCaption: !!cap,
+            captionReserve: hasCaption,
+            captionH,
             captionText: capRaw,
             objectFit: 'contain',
           },
@@ -528,16 +736,21 @@ function runCloseLightboxMorph() {
   let thumbRect = roundRectPx(thumbRectRaw)
   let bigRect = roundRectPx(bigRectRaw)
 
-  if (!bigRect && lightboxIndex.value != null) {
-    const L = lightboxLayoutForIndex(lightboxIndex.value)
-    if (L) {
-      const { shellW, shellH } = L
-      bigRect = {
-        top: Math.round((window.innerHeight - shellH) / 2),
-        left: Math.round((window.innerWidth - shellW) / 2),
-        width: shellW,
-        height: shellH,
-      }
+  const L = lbLayout.value || computeLightboxLayout(lightboxIndex.value)
+  const closeCaptionH = L?.captionH ?? 0
+  const closeHasCaption = !!L?.hasCaption
+
+  if (!bigRect && L) {
+    const closeInsets = lbInsets()
+    bigRect = {
+      top: Math.round(
+        closeInsets.top +
+          (window.innerHeight - closeInsets.top - closeInsets.bottom - L.frameH) /
+            2,
+      ),
+      left: Math.round((window.innerWidth - L.frameW) / 2),
+      width: L.frameW,
+      height: L.frameH,
     }
   }
 
@@ -568,6 +781,8 @@ function runCloseLightboxMorph() {
       morphKind: 'close',
       outlinePx: LB_FULL_OUTLINE_PX,
       showCaption: false,
+      captionReserve: closeHasCaption,
+      captionH: closeCaptionH,
       captionText: '',
       objectFit: 'contain',
     },
@@ -588,6 +803,8 @@ function runCloseLightboxMorph() {
             morphKind: 'close',
             outlinePx: 4,
             showCaption: false,
+            captionReserve: false,
+            captionH: 0,
             captionText: '',
             objectFit: 'cover',
             appendCloseOpacityFade: true,
@@ -621,7 +838,7 @@ function closeLightbox() {
   if (viewerMode.value !== 'viewing') return
   if (captionFadeBeforeCloseTimer != null) return
 
-  if (hasLightboxCaption.value) {
+  if (captionInFrame.value) {
     lbCaptionFastHide.value = true
     captionFadeBeforeCloseTimer = window.setTimeout(() => {
       captionFadeBeforeCloseTimer = null
@@ -632,41 +849,8 @@ function closeLightbox() {
   runCloseLightboxMorph()
 }
 
-function syncLbActiveSlideRefs(swiper) {
-  const slide = swiper?.slides?.[swiper.activeIndex]
-  const frame = slide?.querySelector('.lb-framed')
-  const img = slide?.querySelector('.lb-main-img')
-  lbContentWrapRef.value = frame instanceof HTMLElement ? frame : null
-  lbContentImgRef.value = img instanceof HTMLImageElement ? img : null
-}
-
-function onLbSwiperInit(swiper) {
-  lbSwiperInstance.value = swiper
-  if (lightboxIndex.value != null && swiper.activeIndex !== lightboxIndex.value) {
-    swiper.slideTo(lightboxIndex.value, 0)
-  }
-  nextTick(() => syncLbActiveSlideRefs(swiper))
-}
-
-function onLbSwiperSlideChange(swiper) {
-  lightboxIndex.value = swiper.activeIndex
-  if (swiper.zoom?.scale && swiper.zoom.scale > 1) {
-    swiper.zoom.out()
-  }
-  syncLbActiveSlideRefs(swiper)
-}
-
-function onLbSwiperDestroy() {
-  lbSwiperInstance.value = null
-}
-
 function prevImage() {
   if (viewerMode.value !== 'viewing') return
-  const swiper = lbSwiperInstance.value
-  if (swiper) {
-    swiper.slidePrev()
-    return
-  }
   const n = layout.value.length
   if (n === 0 || lightboxIndex.value === null) return
   lightboxIndex.value = (lightboxIndex.value - 1 + n) % n
@@ -674,95 +858,9 @@ function prevImage() {
 
 function nextImage() {
   if (viewerMode.value !== 'viewing') return
-  const swiper = lbSwiperInstance.value
-  if (swiper) {
-    swiper.slideNext()
-    return
-  }
   const n = layout.value.length
   if (n === 0 || lightboxIndex.value === null) return
   lightboxIndex.value = (lightboxIndex.value + 1) % n
-}
-
-const LB_VERTICAL_DISMISS_PX = 60
-
-let lbTouchStart = null
-let lbTouchDismissed = false
-let lbSuppressOverlayClick = false
-
-function resetLbTouch() {
-  lbTouchStart = null
-  lbTouchDismissed = false
-}
-
-function onLbOverlayTouchStart(e) {
-  if (viewerMode.value !== 'viewing') return
-  if (e.touches.length !== 1) return
-  const t = e.touches[0]
-  if (t.target instanceof Element && t.target.closest('.swiper-zoom-container')) {
-    return
-  }
-  lbTouchStart = { x: t.clientX, y: t.clientY }
-  lbTouchDismissed = false
-  lbSuppressOverlayClick = false
-}
-
-function onLbOverlayTouchMove(e) {
-  if (!lbTouchStart || viewerMode.value !== 'viewing' || lbTouchDismissed) return
-  if (e.touches.length !== 1) return
-  const t = e.touches[0]
-  const dx = t.clientX - lbTouchStart.x
-  const dy = t.clientY - lbTouchStart.y
-
-  const isVerticalDismiss =
-    Math.abs(dy) >= LB_VERTICAL_DISMISS_PX && Math.abs(dy) > Math.abs(dx)
-
-  if (isVerticalDismiss) {
-    lbTouchDismissed = true
-    lbSuppressOverlayClick = true
-    e.preventDefault()
-    closeLightbox()
-    return
-  }
-
-  if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 8) {
-    e.preventDefault()
-  }
-}
-
-function onLbOverlayTouchEnd() {
-  resetLbTouch()
-}
-
-function onLbOverlayClickSelf() {
-  if (lbSuppressOverlayClick) {
-    lbSuppressOverlayClick = false
-    return
-  }
-  closeLightbox()
-}
-
-function onLbBackdropClick() {
-  if (lbSuppressOverlayClick) {
-    lbSuppressOverlayClick = false
-    return
-  }
-  closeLightbox()
-}
-
-/** Tap auf leeren Swiper-Bereich (nicht auf Bild/Rahmen). */
-function onLbSwiperTap(_swiper, event) {
-  if (viewerMode.value !== 'viewing') return
-  const target = event?.target
-  if (!(target instanceof Element)) return
-  if (
-    target.closest(
-      '.lb-framed, .lb-main-img, .lb-caption-overlay, .swiper-zoom-container',
-    )
-  ) {
-    return
-  }
-  closeLightbox()
 }
 
 const gridMargin = computed(() => (isMobileLayout.value ? [5, 5] : [10, 10]))
@@ -880,7 +978,6 @@ watch(gridRowHeight, () => {
 watch(viewerMode, (m) => {
   if (m === 'idle') {
     lbCaptionFastHide.value = false
-    lbSwiperInstance.value = null
   }
 })
 
@@ -905,18 +1002,61 @@ watch(
     if (viewerMode.value !== 'viewing' || lightboxIndex.value == null) return
     nextTick(() => {
       requestAnimationFrame(() => {
-        scrollThumbnailIntoViewCentered(lightboxIndex.value)
+        scrollActiveThumbnailIntoView(lightboxIndex.value)
       })
     })
   },
   { flush: 'post' },
 )
 
+/**
+ * Box-Layout (Rahmen/Bild/Text) neu berechnen, sobald sich Index, Modus oder die
+ * gemessenen Bildmaße ändern. Einzige Quelle für Rahmen UND Morph → bleibt synchron.
+ */
+watch(
+  () => {
+    const src = currentLightboxSrc.value
+    const dim = src ? naturalBySrc[src] : null
+    return [lightboxIndex.value, viewerMode.value, src, dim?.w, dim?.h]
+  },
+  () => {
+    if (viewerMode.value === 'idle' || lightboxIndex.value == null) {
+      lbLayout.value = null
+      return
+    }
+    recomputeLbLayout()
+  },
+  { flush: 'post' },
+)
+
+function onWindowResizeLightbox() {
+  if (lightboxIndex.value != null && viewerMode.value !== 'idle') {
+    recomputeLbLayout()
+  }
+}
+
+// Mode/Orientierung/Info ändern die Reserven bzw. die Textzeile → neu rechnen.
+watch([isMobileLayout, isLandscape, infoVisible], () => {
+  if (lightboxIndex.value != null && viewerMode.value !== 'idle') {
+    recomputeLbLayout()
+  }
+})
+
+onMounted(() => {
+  window.addEventListener('resize', onWindowResizeLightbox)
+  syncOrientation()
+  orientationMq = window.matchMedia('(orientation: landscape)')
+  orientationMq.addEventListener('change', syncOrientation)
+})
+
 onBeforeUnmount(() => {
   clearMorphTimer()
   clearMorphCloseFadeTimer()
   clearCaptionFadeBeforeCloseTimer()
   window.removeEventListener('keydown', onLightboxKeydown)
+  window.removeEventListener('resize', onWindowResizeLightbox)
+  orientationMq?.removeEventListener('change', syncOrientation)
+  disposeCaptionMeasureEl()
   gridHostWidthObserver.disconnect()
   gridLayoutHeightObserver?.disconnect()
   gridLayoutHeightObserver = null
@@ -1033,25 +1173,24 @@ onBeforeUnmount(() => {
       <Transition name="lb-overlay">
         <div
           v-if="lightboxOpen"
-          class="lb-overlay fixed inset-0 z-[200] flex items-center justify-center p-4"
+          class="lb-overlay fixed inset-0 z-[200] flex items-center justify-center"
           :class="{
             'pointer-events-none': viewerMode === 'closing',
             'lb-overlay--scroll-lock': lightboxOpen && viewerMode !== 'closing',
+            'lb-overlay--mobile': isMobileLayout,
+            'lb-overlay--portrait': isMobilePortrait,
+            'lb-overlay--landscape': isMobileLandscape,
           }"
           role="dialog"
           aria-modal="true"
           aria-label="Bildansicht"
-          @click.self="onLbOverlayClickSelf"
-          @touchstart.passive="onLbOverlayTouchStart"
-          @touchmove="onLbOverlayTouchMove"
-          @touchend="onLbOverlayTouchEnd"
-          @touchcancel="onLbOverlayTouchEnd"
+          @click.self="closeLightbox"
         >
           <div
             class="lb-backdrop absolute inset-0 z-0 bg-black/90 will-change-[opacity]"
             :style="lightboxBackdropStyle"
             aria-hidden="true"
-            @click="onLbBackdropClick"
+            @click="closeLightbox"
           />
 
           <div
@@ -1060,62 +1199,33 @@ onBeforeUnmount(() => {
             class="lb-morph-shell pointer-events-none will-change-[top,left,width,height,opacity]"
             :style="[morphShellStyle, { opacity: morphShellOpacity }]"
           >
-            <div
-              class="flex h-full min-h-0 w-full flex-col bg-neutral-950/30"
-            >
-              <div
-                v-if="morphInnerObjectFit === 'cover'"
-                class="lb-morph-img-band lb-img-slot-cq relative min-h-0 flex-1 overflow-hidden"
-              >
+            <!-- Cover-Phase (Start/Ende = Thumbnail): Bild füllt die Kachel randlos -->
+            <img
+              v-if="morphInnerObjectFit === 'cover'"
+              ref="morphImgRef"
+              :src="morphSrc"
+              alt=""
+              class="absolute inset-0 h-full w-full bg-neutral-950/30 object-cover"
+              :style="{ transition: morphInnerTransition }"
+            />
+
+            <!-- Contain-Phase (= Vollansicht): fester 10px-Rahmen, Text darunter -->
+            <div v-else class="lb-frame-box">
+              <div class="lb-img-area">
                 <img
                   ref="morphImgRef"
                   :src="morphSrc"
                   alt=""
-                  class="absolute inset-0 h-full w-full object-cover"
+                  class="lb-main-img"
                   :style="{ transition: morphInnerTransition }"
                 />
-                <div
-                  v-if="morphShowCaption"
-                  class="lb-caption-overlay pointer-events-none"
-                  :style="{
-                    left: `${LB_CAPTION_INSET}px`,
-                    bottom: `${LB_CAPTION_INSET}px`,
-                    maxWidth: `calc(100% - ${LB_CAPTION_INSET * 2}px)`,
-                  }"
-                >
-                  <div class="lb-caption-overlay-inner">
-                    {{ morphCaptionText }}
-                  </div>
-                </div>
               </div>
               <div
-                v-else
-                class="lb-morph-img-band lb-img-slot-cq flex min-h-0 flex-1 items-center justify-center overflow-hidden"
+                v-if="morphCaptionReserve"
+                class="lb-caption"
+                :style="{ height: `${morphCaptionH}px`, opacity: morphShowCaption ? 1 : 0 }"
               >
-                <div
-                  class="lb-image-frame relative z-0 inline-block max-h-full max-w-full min-h-0"
-                >
-                  <img
-                    ref="morphImgRef"
-                    :src="morphSrc"
-                    alt=""
-                    class="lb-morph-inner-img relative z-0 block max-h-[99%] max-w-[99%] object-contain"
-                    :style="{ transition: morphInnerTransition }"
-                  />
-                  <div
-                    v-if="morphShowCaption"
-                    class="lb-caption-overlay pointer-events-none"
-                    :style="{
-                      left: `${LB_CAPTION_INSET}px`,
-                      bottom: `${LB_CAPTION_INSET}px`,
-                      maxWidth: `calc(100% - ${LB_CAPTION_INSET * 2}px)`,
-                    }"
-                  >
-                    <div class="lb-caption-overlay-inner">
-                      {{ morphCaptionText }}
-                    </div>
-                  </div>
-                </div>
+                <div class="lb-caption-inner">{{ morphCaptionText }}</div>
               </div>
             </div>
           </div>
@@ -1124,73 +1234,40 @@ onBeforeUnmount(() => {
             v-if="viewerMode === 'viewing' && lightboxIndex !== null"
             class="lb-viewing-shell relative z-[15] flex min-h-[min(90vh,100%)] min-w-[min(95vw,100%)] max-h-[92vh] max-w-[min(95vw,100%)] items-center justify-center"
           >
-            <Swiper
-              class="lb-swiper"
-              :modules="lbSwiperModules"
-              :initial-slide="lightboxIndex"
-              :slides-per-view="1"
-              :space-between="30"
-              :speed="380"
-              :touch-ratio="1"
-              :threshold="8"
-              :resistance-ratio="0.82"
-              :long-swipes-ratio="0.35"
-              :keyboard="{ enabled: true, onlyInViewport: true }"
-              :zoom="{ maxRatio: 3, toggle: true }"
-              @swiper="onLbSwiperInit"
-              @slide-change="onLbSwiperSlideChange"
-              @tap="onLbSwiperTap"
-              @destroy="onLbSwiperDestroy"
-            >
-              <SwiperSlide
-                v-for="(item, index) in layout"
-                :key="item.i"
-                class="lb-swiper-slide"
-              >
-                <div
-                  class="lb-framed mx-auto flex min-h-0 flex-col overflow-hidden bg-neutral-950/30 outline outline-[1px] outline-yellow-400"
-                  :style="lightboxFrameCss(index)"
-                >
+            <div class="lb-fade-stage">
+              <Transition name="lb-fade">
+                <div :key="lightboxIndex" class="lb-fade-layer">
                   <div
-                    class="lb-img-slot lb-img-slot-cq flex min-h-0 flex-1 items-center justify-center overflow-hidden"
+                    ref="lbContentWrapRef"
+                    class="lb-framed lb-frame-box mx-auto overflow-hidden bg-neutral-950/30 outline outline-[1px] outline-yellow-400"
+                    :style="lbFrameStyle"
                   >
+                    <div class="lb-img-area">
+                      <img
+                        :src="currentLightboxSrc"
+                        :alt="layout[lightboxIndex]?.i"
+                        class="lb-main-img shadow-2xl"
+                        draggable="false"
+                        @load="onLightboxImgLoad"
+                      />
+                    </div>
                     <div
-                      class="lb-image-frame relative z-0 inline-block max-h-full max-w-full min-h-0"
+                      v-if="captionInFrame"
+                      class="lb-caption"
+                      :class="{ 'lb-caption--fast-hide': lbCaptionFastHide }"
                     >
-                      <div class="swiper-zoom-container">
-                        <img
-                          :src="item.src"
-                          :alt="item.i"
-                          class="lb-main-img swiper-zoom-target relative z-0 block shadow-2xl"
-                          draggable="false"
-                          @load="onLightboxImgLoad"
-                        />
-                      </div>
-                      <div
-                        v-if="hasLightboxCaptionForItem(item)"
-                        class="lb-caption-overlay pointer-events-none"
-                        :class="{
-                          'lb-caption-overlay--fast-hide':
-                            lbCaptionFastHide && index === lightboxIndex,
-                        }"
-                        :style="{
-                          left: `${LB_CAPTION_INSET}px`,
-                          bottom: `${LB_CAPTION_INSET}px`,
-                          maxWidth: `calc(100% - ${LB_CAPTION_INSET * 2}px)`,
-                        }"
-                      >
-                        <div class="lb-caption-overlay-inner">
-                          {{ lightboxCaptionRawForItem(item) }}
-                        </div>
+                      <div class="lb-caption-inner">
+                        {{ currentLightboxCaptionRaw }}
                       </div>
                     </div>
                   </div>
                 </div>
-              </SwiperSlide>
-            </Swiper>
+              </Transition>
+            </div>
 
+            <!-- Desktop: 3-Zonen-Mausnavigation (prev / close / next) -->
             <div
-              v-show="!isMobileLayout"
+              v-if="!isMobileLayout"
               class="lb-zone-controls absolute inset-0 z-[40] flex w-full"
               aria-hidden="true"
             >
@@ -1214,6 +1291,78 @@ onBeforeUnmount(() => {
               />
             </div>
           </div>
+
+          <!-- Mobil-Portrait: Icon-Reihe unterhalb des Rahmens (prev / close / next) -->
+          <div
+            v-if="isMobilePortrait && viewerMode === 'viewing'"
+            class="lb-mnav lb-mnav--portrait"
+          >
+            <button
+              type="button"
+              class="lb-mnav-btn"
+              aria-label="Vorheriges Bild"
+              @click.stop="prevImage"
+            >
+              <img :src="iconUrl('left.png')" alt="" draggable="false" />
+            </button>
+            <button
+              type="button"
+              class="lb-mnav-btn"
+              aria-label="Schließen"
+              @click.stop="closeLightbox"
+            >
+              <img :src="iconUrl('close.png')" alt="" draggable="false" />
+            </button>
+            <button
+              type="button"
+              class="lb-mnav-btn"
+              aria-label="Nächstes Bild"
+              @click.stop="nextImage"
+            >
+              <img :src="iconUrl('right.png')" alt="" draggable="false" />
+            </button>
+          </div>
+
+          <!-- Mobil-Landscape: Ecken-Icons (info TL, close TR, prev BL, next BR) -->
+          <template v-if="isMobileLandscape && viewerMode === 'viewing'">
+            <button
+              type="button"
+              class="lb-mnav-btn lb-mnav--ls-info"
+              :aria-label="infoVisible ? 'Infotext ausblenden' : 'Infotext einblenden'"
+              :aria-pressed="infoVisible"
+              @click.stop="toggleInfo"
+            >
+              <img
+                :src="iconUrl(infoVisible ? 'infoon.png' : 'infooff.png')"
+                alt=""
+                draggable="false"
+              />
+            </button>
+            <button
+              type="button"
+              class="lb-mnav-btn lb-mnav--ls-close"
+              aria-label="Schließen"
+              @click.stop="closeLightbox"
+            >
+              <img :src="iconUrl('close.png')" alt="" draggable="false" />
+            </button>
+            <button
+              type="button"
+              class="lb-mnav-btn lb-mnav--ls-prev"
+              aria-label="Vorheriges Bild"
+              @click.stop="prevImage"
+            >
+              <img :src="iconUrl('left.png')" alt="" draggable="false" />
+            </button>
+            <button
+              type="button"
+              class="lb-mnav-btn lb-mnav--ls-next"
+              aria-label="Nächstes Bild"
+              @click.stop="nextImage"
+            >
+              <img :src="iconUrl('right.png')" alt="" draggable="false" />
+            </button>
+          </template>
         </div>
       </Transition>
     </Teleport>
@@ -1346,120 +1495,246 @@ onBeforeUnmount(() => {
   opacity: 0;
 }
 
+.lb-overlay {
+  padding: 16px;
+}
+
 .lb-overlay.lb-overlay--scroll-lock {
   touch-action: none;
 }
 
-.lb-swiper {
+/*
+ * Crossfade-Bühne: feste Höhe (= berechnete Maximalhöhe), beide Bild-Layer
+ * absolut übereinander. Bildwechsel = reines Opacity-Crossfade (kein Sliden).
+ * Auf Mobil-Portrait unten Platz für die später folgende Steuerung.
+ */
+.lb-fade-stage {
+  position: relative;
   width: 100%;
   max-width: min(95vw, 100%);
-  height: min(88vh, 82svh);
-  padding: 0 16px;
+  height: 88svh;
+  max-height: 88svh;
   box-sizing: border-box;
-  overflow: hidden;
-  touch-action: none;
 }
 
-.lb-swiper :deep(.swiper-zoom-container) {
+.lb-fade-layer {
+  position: absolute;
+  inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.lb-fade-enter-active,
+.lb-fade-leave-active {
+  transition: opacity 240ms ease;
+  will-change: opacity;
+}
+
+.lb-fade-enter-from,
+.lb-fade-leave-to {
+  opacity: 0;
+}
+
+/*
+ * Festes Box-Modell (Vollansicht UND Morph-Endzustand):
+ *   [10px] Bild [10px] Text [10px]  → Rahmen skaliert exakt mit der Bildgröße.
+ * Maße kommen aus computeLightboxLayout(): Rahmenbreite + Bildgröße werden als
+ * Inline-Styles gesetzt, damit nichts verzerrt oder abgeschnitten wird.
+ */
+.lb-frame-box {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px;
+  box-sizing: border-box;
+  max-width: 100%;
+}
+
+.lb-morph-shell .lb-frame-box {
   width: 100%;
   height: 100%;
+  background: rgb(10 10 10 / 0.3);
 }
 
-.lb-swiper :deep(.swiper-wrapper) {
-  align-items: center;
-}
-
-.lb-swiper-slide {
+.lb-img-area {
   display: flex;
+  flex: 1 1 auto;
   align-items: center;
   justify-content: center;
-  height: min(88vh, 82svh);
-  max-height: min(88vh, 82svh);
-  box-sizing: border-box;
-}
-
-.lb-swiper .lb-framed {
-  max-width: 100%;
-  max-height: 100%;
-  box-sizing: border-box;
-}
-
-.lb-swiper .lb-img-slot {
-  max-width: 100%;
-  max-height: 100%;
-}
-
-.lb-swiper .lb-image-frame {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  max-width: 100%;
-  max-height: 100%;
-}
-
-.lb-swiper .lb-main-img,
-.lb-swiper .swiper-zoom-target {
-  max-width: 100%;
-  max-height: 100%;
-  width: auto;
-  height: auto;
-  object-fit: contain;
-}
-
-.lb-morph-inner-img {
-  flex-shrink: 0;
+  min-height: 0;
 }
 
 .lb-main-img {
+  display: block;
   width: auto;
   height: auto;
+  max-width: 100%;
+  max-height: 100%;
   object-fit: contain;
 }
 
-/* ~0,5 % Bandhöhe oben/unten, 4 % Bandbreite links/rechts — Morph & Lightbox identisch */
-.lb-img-slot-cq {
-  container-type: size;
+/* Infotext: linksbündig, unter dem Bild, innerhalb des gelben Rahmens. */
+.lb-caption {
+  flex: 0 0 auto;
+  align-self: stretch;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.lb-caption-inner {
   box-sizing: border-box;
-  padding: 0.5cqh 4cqw;
-}
-
-.lb-caption-overlay {
-  position: absolute;
-  z-index: 1;
-  right: auto;
-  top: auto;
-}
-
-.lb-caption-overlay-inner {
   padding: 2px 6px;
-  border-radius: 2px;
   text-align: left;
   font-size: 10px;
   line-height: 1.3;
   color: #fafafa;
   white-space: pre-wrap;
   word-break: break-word;
-  background: linear-gradient(
-    to top,
-    rgb(0 0 0 / 0.78) 0%,
-    rgb(0 0 0 / 0.5) 50%,
-    rgb(0 0 0 / 0.28) 100%
-  );
-  box-shadow: 0 1px 6px rgb(0 0 0 / 0.25);
+  overflow-wrap: anywhere;
 }
 
-.lb-caption-overlay--fast-hide {
+.lb-caption--fast-hide {
   opacity: 0;
   transition: opacity 95ms ease-out;
 }
 
-@media (max-width: 767px) {
-  .lb-img-slot-cq {
-    padding: 0.25cqh 2cqw;
-  }
+/* Sanftes Auf-/Zuklappen des Textbereichs beim Info-Toggle (Landscape). */
+.lb-caption {
+  transition: opacity 160ms ease;
+}
 
+/* ===================================================================== *
+ *  Mobil (Touch / schmaler Viewport) — getrennt nach Orientierung.
+ *  Klassen kommen aus Vue-Reaktivität, damit CSS & Geometrie (JS) exakt
+ *  dieselbe Bedingung nutzen. Werte = Reserven aus dem Script.
+ *  100dvh statt vh/svh → URL-Leiste/Systembalken klauen keinen Platz und
+ *  das Bild inkl. Rahmen wird nie abgeschnitten (Landscape-Fix).
+ * ===================================================================== */
+.lb-overlay--mobile {
+  /* Absolutes Schwarz → Android dimmt die Systemleisten dunkel. */
+  background-color: #000000;
+  height: 100dvh;
+  min-height: 100dvh;
+  bottom: auto;
+}
+
+.lb-overlay--mobile .lb-backdrop {
+  background-color: #000000;
+}
+
+.lb-overlay--mobile .lb-viewing-shell {
+  /*
+   * Wichtig: definite Breite/Höhe geben. Die Crossfade-Layer sind absolut
+   * positioniert und tragen NICHTS zur intrinsischen Größe der Bühne bei –
+   * ohne diese Vorgabe kollabiert .lb-fade-stage (width:100%) auf 0 Breite,
+   * und der Rahmen schrumpft auf seine 20px Padding (schmaler Streifen).
+   */
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  max-width: 100%;
+  max-height: 100%;
+}
+
+/* Bühne füllt die (jetzt definite) Shell vollständig aus. */
+.lb-overlay--mobile .lb-fade-stage {
+  width: 100%;
+}
+
+/* Mobil-Portrait: unten Band für die Icon-Reihe (left/close/right). */
+.lb-overlay--portrait {
+  padding: 8px 12px 104px;
+}
+
+.lb-overlay--portrait .lb-fade-stage {
+  height: calc(100dvh - 8px - 104px);
+  max-height: calc(100dvh - 8px - 104px);
+}
+
+/*
+ * Mobil-Landscape: Buttons sitzen in den Ecken → vertikal nur schmaler
+ * Sicherheitsabstand (12px), seitlich 64px Reserve für die Icons. Werte müssen
+ * exakt LB_LANDSCAPE_INSET_TOP/BOTTOM/SIDE entsprechen. dvh deckt die URL-Leiste ab.
+ */
+.lb-overlay--landscape {
+  padding: 12px 64px;
+}
+
+.lb-overlay--landscape .lb-fade-stage {
+  height: calc(100dvh - 12px - 12px);
+  max-height: calc(100dvh - 12px - 12px);
+  max-width: 100%;
+}
+
+/* --- Mobile Icon-Buttons ------------------------------------------------ */
+.lb-mnav-btn {
+  position: absolute;
+  z-index: 45;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  margin: 0;
+  border: 0;
+  background: transparent;
+  pointer-events: auto;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  cursor: pointer;
+}
+
+.lb-mnav-btn img {
+  display: block;
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.lb-mnav-btn:active img {
+  transform: scale(0.92);
+}
+
+/* Portrait: zentrierte Icon-Reihe im unteren Band. */
+.lb-mnav--portrait {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 45;
+  height: 104px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 40px;
+  pointer-events: none;
+}
+
+.lb-mnav--portrait .lb-mnav-btn {
+  position: static;
+}
+
+/* Landscape: Ecken. */
+.lb-mnav--ls-info {
+  top: 6px;
+  left: 8px;
+}
+
+.lb-mnav--ls-close {
+  top: 6px;
+  right: 8px;
+}
+
+.lb-mnav--ls-prev {
+  bottom: 8px;
+  left: 10px;
+}
+
+.lb-mnav--ls-next {
+  bottom: 8px;
+  right: 10px;
 }
 </style>
