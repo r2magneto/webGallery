@@ -54,7 +54,7 @@ function measureRuleChars() {
   const pre = el?.querySelector('.site-footer-pre--rule')
   if (!(el instanceof HTMLElement) || !(pre instanceof HTMLElement)) return
 
-  const maxW = pre.clientWidth
+  const maxW = el.clientWidth
   if (maxW <= 0) return
 
   const cs = getComputedStyle(pre)
@@ -79,6 +79,8 @@ function measureRuleChars() {
 }
 
 const LEGAL_MOBILE_MEDIA = '(max-width: 767px)'
+/** Ab hier: ASCII-Box per vw-Schrift statt JS-transform (kein Abschneiden 410–390px). */
+const LEGAL_NARROW_MEDIA = '(max-width: 410px)'
 
 /**
  * Impressum-Full-Bleed auf Mobil — exakt die bewährte Logik der About-Seite
@@ -94,7 +96,8 @@ function syncLegalFit() {
   if (!(canvas instanceof HTMLElement) || !(box instanceof HTMLElement)) return
 
   const mobile = window.matchMedia(LEGAL_MOBILE_MEDIA).matches
-  if (!mobile || !isLegalOpen.value) {
+  const narrow = window.matchMedia(LEGAL_NARROW_MEDIA).matches
+  if (!mobile || !isLegalOpen.value || narrow) {
     box.style.position = ''
     box.style.top = ''
     canvas.style.setProperty('--legal-scale', '1')
@@ -118,9 +121,8 @@ function syncLegalFit() {
   canvas.style.setProperty('--legal-scale', '1')
   void box.offsetWidth
 
-  const container = canvas.parentElement
   const containerW =
-    container instanceof HTMLElement ? container.clientWidth : canvas.clientWidth
+    root instanceof HTMLElement ? root.clientWidth : canvas.clientWidth
   // 2px Atemraum gegen Subpixel-Abschnitt am Rand.
   const fitWidth = Math.max(1, containerW - 2)
   const natW = Math.max(
@@ -148,6 +150,7 @@ function syncLegalFit() {
   canvas.style.maxWidth = '100%'
   canvas.style.marginLeft = 'auto'
   canvas.style.marginRight = 'auto'
+  measureRuleChars()
   scheduleResizeLenis()
 }
 
@@ -217,31 +220,32 @@ onBeforeUnmount(() => {
     aria-label="Seitenfuß"
   >
     <div ref="footerInnerRef" class="site-footer-inner w-full">
-      <pre class="site-footer-pre site-footer-pre--rule" aria-hidden="true">{{ ruleLine }}</pre>
+      <div class="site-footer-stack">
+        <pre class="site-footer-pre site-footer-pre--rule" aria-hidden="true">{{ ruleLine }}</pre>
 
-      <div class="site-footer-bar">
-        <p class="site-footer-tagline">
-          We do not track you and don't offer you cookies (or free candy)
-        </p>
-        <button
-          type="button"
-          class="footer-legal-btn"
-          :aria-expanded="isLegalOpen"
-          aria-controls="site-footer-legal-panel"
-          @click="toggleLegal"
+        <div class="site-footer-bar">
+          <p class="site-footer-tagline">
+            We do not track you and don't offer you cookies (or free candy)
+          </p>
+          <button
+            type="button"
+            class="footer-legal-btn"
+            :aria-expanded="isLegalOpen"
+            aria-controls="site-footer-legal-panel"
+            @click="toggleLegal"
+          >
+            [ LEGAL NOTICE / IMPRESSUM ]
+          </button>
+        </div>
+
+        <div
+          v-show="isLegalOpen"
+          id="site-footer-legal-panel"
+          class="site-footer-legal"
+          role="region"
+          aria-label="Legal notice and privacy policy"
         >
-          [ LEGAL NOTICE / IMPRESSUM ]
-        </button>
-      </div>
-
-      <div
-        v-show="isLegalOpen"
-        id="site-footer-legal-panel"
-        class="site-footer-legal"
-        role="region"
-        aria-label="Legal notice and privacy policy"
-      >
-        <div class="legal-fit-canvas">
+          <div class="legal-fit-canvas">
         <div class="legal-box site-footer-pre site-footer-pre--legal">
           <div class="legal-box-line">{{ boxTop }}</div>
           <div class="legal-box-line">{{ boxLine('LEGAL NOTICE / IMPRESSUM') }}</div>
@@ -301,6 +305,7 @@ onBeforeUnmount(() => {
           <div class="legal-box-line">{{ boxBottom }}</div>
         </div>
         </div>
+        </div>
       </div>
     </div>
   </footer>
@@ -326,6 +331,12 @@ onBeforeUnmount(() => {
   /* Seitliche Einrückung (Desktop). Auf Mobil wird sie reduziert → volle Breite. */
   padding-left: 9%;
   padding-right: 9%;
+}
+
+.site-footer-stack {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .site-footer-pre {
@@ -472,32 +483,66 @@ onBeforeUnmount(() => {
  */
 @media (max-width: 767px) {
   .site-footer-inner {
+    width: 100%;
+    box-sizing: border-box;
     padding-left: clamp(8px, 1.6vw, 14px);
     padding-right: clamp(8px, 1.6vw, 14px);
     overflow-x: hidden;
-    min-width: 0;
+  }
+
+  .site-footer-stack {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .site-footer-pre--rule {
+    display: block;
+    width: min(100%, 100%);
+    min-width: min(200px, 100%);
+    max-width: 100%;
+    margin: 0 auto 1rem;
+    text-align: center;
+    white-space: pre;
+    overflow-x: auto;
+  }
+
+  .site-footer-bar {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+    max-width: 100%;
+    text-align: center;
+  }
+
+  .site-footer-tagline {
+    margin: 0;
+    white-space: nowrap;
+    text-align: center;
+  }
+
+  .footer-legal-btn {
+    align-self: center;
+    margin: 0;
+    white-space: nowrap;
   }
 
   .site-footer-legal {
+    width: 100%;
+    max-width: 100%;
     overflow-x: hidden;
-    min-width: 0;
   }
 
-  /* Canvas = sichtbare, mittig zentrierte Box (JS setzt skalierte Maße). */
   .legal-fit-canvas {
     position: relative;
     display: block;
-    overflow: hidden;
+    width: auto;
     max-width: 100%;
-    /* Abstand zur LEGAL-Schaltfläche wandert auf die Canvas (Box wird absolut). */
+    overflow: hidden;
     margin: clamp(11px, 1.8vw, 18px) auto 0;
   }
 
-  /*
-   * Exakt wie .ref-about-pre der About-Seite: absolut, volle Eigenbreite, mittig
-   * (left:50% + translateX(-50%)) und per --legal-scale auf die Canvas-Breite
-   * skaliert → füllt die volle Bildschirmbreite, sauber zentriert, kein Overflow.
-   */
   .site-footer-pre--legal {
     position: absolute;
     top: 0;
@@ -509,16 +554,30 @@ onBeforeUnmount(() => {
     transform: translateX(-50%) scale(var(--legal-scale, 1));
     transform-origin: top center;
   }
+}
 
-  /* Gelbe Trennlinie und Tagline ebenfalls über die volle Breite, mittig. */
-  .site-footer-pre--rule {
-    text-align: center;
+/*
+ * Schmale Screens: ~76 Zeichen — linear mit Viewport (410px ≈ 12px wie Desktop-Basis).
+ * Kein JS-scale, damit zwischen 410px und 390px nichts abgeschnitten wird.
+ */
+@media (max-width: 410px) {
+  .legal-fit-canvas {
+    width: 100% !important;
+    height: auto !important;
+    max-width: 100%;
+    margin-left: auto;
+    margin-right: auto;
   }
 
-  .site-footer-tagline {
-    overflow-wrap: normal;
-    word-break: normal;
-    text-wrap: pretty;
+  .site-footer-pre--legal {
+    position: static;
+    left: auto;
+    display: block;
+    width: max-content;
+    max-width: 100%;
+    margin: 0 auto;
+    transform: none;
+    font-size: 2.93vw;
   }
 }
 </style>

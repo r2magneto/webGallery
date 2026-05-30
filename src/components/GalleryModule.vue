@@ -27,6 +27,12 @@ import { createGridHostWidthObserver } from '../utils/gridHostResize.js'
 import GalleryScrollbar from './GalleryScrollbar.vue'
 import { useGasPedalScroll } from '../composables/useGasPedalScroll.js'
 import { useMobileLayout } from '../composables/useMobileLayout.js'
+import {
+  resetViewportZoom,
+  restoreViewportZoom,
+  bindOverlayToVisualViewport,
+  unbindOverlayFromVisualViewport,
+} from '../utils/viewportZoom.js'
 
 const props = defineProps({
   /** Layout-JSON im public-Ordner (z. B. layout.json). */
@@ -62,6 +68,44 @@ function toggleInfo() {
 /** Mobil-Icons liegen wie die Cursor-Grafiken in public/assets (relative Base). */
 function iconUrl(name) {
   return `${import.meta.env.BASE_URL}assets/${name}`
+}
+
+const LB_NAV_ICON_FILES = [
+  'left.png',
+  'right.png',
+  'close.png',
+  'infoon.png',
+  'infooff.png',
+]
+
+function preloadLbNavIcons() {
+  for (const name of LB_NAV_ICON_FILES) {
+    const im = new Image()
+    im.decoding = 'async'
+    im.src = iconUrl(name)
+  }
+}
+
+/** Rahmen-Seitenverhältnis pro Slide — eingefroren ab Proxy/Thumbnail. */
+const lbAspectLock = ref(null)
+
+function clearLbAspectLock() {
+  lbAspectLock.value = null
+}
+
+function setLbAspectLock(index, w, h) {
+  if (index == null || w <= 0 || h <= 0) return
+  lbAspectLock.value = { index, w, h }
+}
+
+function dimensionsForLightbox(index, src) {
+  const lock = lbAspectLock.value
+  if (lock && lock.index === index && lock.w > 0 && lock.h > 0) {
+    return { w: lock.w, h: lock.h }
+  }
+  const dim = src ? naturalBySrc[src] : null
+  if (dim?.w > 0 && dim?.h > 0) return { w: dim.w, h: dim.h }
+  return { w: 1600, h: 900 }
 }
 
 /**
@@ -235,6 +279,7 @@ const morphShowCaption = ref(false)
 const morphCaptionText = ref('')
 const morphInnerTransition = ref('none')
 const lbContentWrapRef = ref(null)
+const lbOverlayRef = ref(null)
 const morphShellRef = ref(null)
 const morphImgRef = ref(null)
 
@@ -296,17 +341,8 @@ function toProxySrc(src) {
 /** Proxy-Quelle des aktuell gezeigten Bildes (gecached aus der Thumbnail-Liste). */
 const currentLightboxProxySrc = computed(() => toProxySrc(currentLightboxSrc.value))
 
-/**
- * High-Res-Ebene ist fertig geladen → weich einblenden und die exakten nativen
- * Maße (2048px) übernehmen, damit das Box-Modell unverändert präzise bleibt.
- */
-function onHighResLoad(e) {
-  const el = e.target
-  const key = currentLightboxSrc.value
-  if (key && el?.naturalWidth > 0 && el?.naturalHeight > 0) {
-    naturalBySrc[key] = { w: el.naturalWidth, h: el.naturalHeight }
-    recomputeLbLayout()
-  }
+/** High-Res nur einblenden — Proxy/Thumbnail tragen das feste Rahmen-Layout. */
+function onHighResLoad() {
   isHighResLoaded.value = true
 }
 
@@ -530,13 +566,15 @@ function prefetchNatural(src) {
 function onLightboxImgLoad(e) {
   const el = e.target
   if (!el?.naturalWidth || !el?.naturalHeight) return
-  // Proxy-Ebene: nur das (identische) Seitenverhältnis übernehmen, falls noch
-  // unbekannt. Die echten High-Res-Maße kommen über onHighResLoad.
+  const idx = lightboxIndex.value
   const key = currentLightboxSrc.value
-  if (key && !naturalBySrc[key]) {
+  if (idx == null || !key) return
+  if (lbAspectLock.value?.index === idx) return
+  if (!naturalBySrc[key]) {
     naturalBySrc[key] = { w: el.naturalWidth, h: el.naturalHeight }
-    recomputeLbLayout()
   }
+  setLbAspectLock(idx, el.naturalWidth, el.naturalHeight)
+  recomputeLbLayout()
 }
 
 /**
@@ -597,13 +635,7 @@ function computeLightboxLayout(index) {
   if (index == null || index < 0 || index >= layout.value.length) return null
   const item = layout.value[index]
   const src = item?.src
-  const dim = src ? naturalBySrc[src] : null
-  let nw = dim?.w
-  let nh = dim?.h
-  if (!nw || !nh) {
-    nw = 1600
-    nh = 900
-  }
+  const { w: nw, h: nh } = dimensionsForLightbox(index, src)
 
   const capRaw = lightboxCaptionRawForItem(item)
   // Im Mobil-Landscape wird der Text nur eingeplant, wenn Info aktiv ist.
@@ -691,33 +723,23 @@ function openLightbox(index, event) {
   clearMorphCloseFadeTimer()
   clearCaptionFadeBeforeCloseTimer()
   lbCaptionFastHide.value = false
+  clearLbAspectLock()
   infoVisible.value = false
   isHighResLoaded.value = false
   morphShellOpacity.value = 1
   lbBackdropOpacity.value = 1
+  if (isMobileLayout.value) resetViewportZoom()
   const src = layout.value[index]?.src ?? ''
   prefetchNatural(src)
 
   const imgEl = event?.currentTarget?.querySelector('.viewer-tile-img')
-  if (!imgEl) {
-    lightboxIndex.value = index
-    viewerMode.value = 'viewing'
-    return
-  }
-  const thumb = imgEl.getBoundingClientRect()
-  if (!thumb.width && !thumb.height) {
-    lightboxIndex.value = index
-    viewerMode.value = 'viewing'
-    return
-  }
-
   const capRaw =
     layout.value[index]?.caption != null
       ? String(layout.value[index].caption)
       : ''
   const cap = capRaw.trim()
-  let nw = imgEl.naturalWidth
-  let nh = imgEl.naturalHeight
+  let nw = imgEl?.naturalWidth
+  let nh = imgEl?.naturalHeight
   if ((!nw || !nh) && src && naturalBySrc[src]) {
     nw = naturalBySrc[src].w
     nh = naturalBySrc[src].h
@@ -728,8 +750,21 @@ function openLightbox(index, event) {
   }
   // Thumbnail ist das Proxy → nur das Seitenverhältnis übernehmen, falls die
   // echten High-Res-Maße noch nicht vorliegen (sonst nicht "downgraden").
-  if (src && imgEl.naturalWidth > 0 && imgEl.naturalHeight > 0 && !naturalBySrc[src]) {
+  if (src && imgEl?.naturalWidth > 0 && imgEl.naturalHeight > 0 && !naturalBySrc[src]) {
     naturalBySrc[src] = { w: imgEl.naturalWidth, h: imgEl.naturalHeight }
+  }
+  setLbAspectLock(index, nw, nh)
+
+  if (!imgEl) {
+    lightboxIndex.value = index
+    viewerMode.value = 'viewing'
+    return
+  }
+  const thumb = imgEl.getBoundingClientRect()
+  if (!thumb.width && !thumb.height) {
+    lightboxIndex.value = index
+    viewerMode.value = 'viewing'
+    return
   }
 
   const L = computeLightboxLayout(index)
@@ -959,9 +994,27 @@ const lightboxOpen = computed(
   () => lightboxIndex.value !== null && viewerMode.value !== 'idle',
 )
 
-watch(lightboxOpen, (open) => {
-  if (open) stopLenisScroll()
-  else startLenisScroll()
+/** Mobil-Nav sofort sichtbar (auch während Morph), unabhängig vom High-Res-@load. */
+const showLbMobileNav = computed(
+  () => lightboxOpen.value && viewerMode.value !== 'closing',
+)
+
+watch(lightboxOpen, async (open) => {
+  if (open) {
+    stopLenisScroll()
+    if (isMobileLayout.value) {
+      resetViewportZoom()
+      await nextTick()
+      if (lbOverlayRef.value) {
+        bindOverlayToVisualViewport(lbOverlayRef.value)
+      }
+    }
+    return
+  }
+  unbindOverlayFromVisualViewport()
+  restoreViewportZoom()
+  clearLbAspectLock()
+  startLenisScroll()
 })
 
 const galleryScrollbarActive = computed(
@@ -985,12 +1038,17 @@ const {
   cursorClearSelector: '.viewer-tile-btn',
 })
 
-const lightboxBackdropStyle = computed(() => ({
-  opacity: lbBackdropOpacity.value,
-  transitionProperty: 'opacity',
-  transitionDuration: `${MORPH_CLOSE_FADE_MS}ms`,
-  transitionTimingFunction: 'ease-out',
-}))
+const lightboxBackdropStyle = computed(() => {
+  const style = {
+    transitionProperty: 'opacity',
+    transitionTimingFunction: 'ease-out',
+  }
+  if (viewerMode.value === 'closing') {
+    style.opacity = lbBackdropOpacity.value
+    style.transitionDuration = `${MORPH_CLOSE_FADE_MS}ms`
+  }
+  return style
+})
 
 async function loadGalleryFromConfig() {
   lightboxIndex.value = null
@@ -1028,6 +1086,7 @@ async function loadGalleryFromConfig() {
 }
 
 onMounted(async () => {
+  preloadLbNavIcons()
   await loadGalleryFromConfig()
 
   window.addEventListener('keydown', onLightboxKeydown)
@@ -1059,8 +1118,18 @@ watch(viewerMode, (m) => {
  * Fade-Ebene per :key neu erzeugt wird, bricht der Browser den alten High-Res-
  * Download ab; der neue startet erst mit dem frischen <img> der neuen Ansicht.
  */
-watch(lightboxIndex, () => {
+watch(lightboxIndex, (idx) => {
   isHighResLoaded.value = false
+  if (idx == null) return
+  const src = layout.value[idx]?.src
+  if (!src) return
+  const dim = naturalBySrc[src]
+  if (dim?.w > 0 && dim?.h > 0) {
+    setLbAspectLock(idx, dim.w, dim.h)
+  } else {
+    clearLbAspectLock()
+    prefetchNatural(src)
+  }
 })
 
 watch(
@@ -1147,6 +1216,8 @@ onBeforeUnmount(() => {
   gridLayoutHeightObserver?.disconnect()
   gridLayoutHeightObserver = null
   cancelScheduledResizeLenis()
+  unbindOverlayFromVisualViewport()
+  restoreViewportZoom()
   if (lightboxOpen.value) startLenisScroll()
 })
 </script>
@@ -1259,6 +1330,7 @@ onBeforeUnmount(() => {
       <Transition name="lb-overlay">
         <div
           v-if="lightboxOpen"
+          ref="lbOverlayRef"
           class="lb-overlay fixed inset-0 z-[200] flex items-center justify-center"
           :class="{
             'pointer-events-none': viewerMode === 'closing',
@@ -1266,18 +1338,23 @@ onBeforeUnmount(() => {
             'lb-overlay--mobile': isMobileLayout,
             'lb-overlay--portrait': isMobilePortrait,
             'lb-overlay--landscape': isMobileLandscape,
+            'lb-overlay--opening': viewerMode === 'opening',
+            'lb-overlay--closing': viewerMode === 'closing',
           }"
           role="dialog"
           aria-modal="true"
           aria-label="Bildansicht"
           @click.self="closeLightbox"
         >
-          <div
-            class="lb-backdrop absolute inset-0 z-0 bg-black/90 will-change-[opacity]"
-            :style="lightboxBackdropStyle"
-            aria-hidden="true"
-            @click="closeLightbox"
-          />
+          <Transition name="lb-dim" appear>
+            <div
+              v-if="lightboxOpen"
+              class="lb-backdrop absolute inset-0 z-0 will-change-[opacity]"
+              :style="lightboxBackdropStyle"
+              aria-hidden="true"
+              @click="closeLightbox"
+            />
+          </Transition>
 
           <div
             v-if="viewerMode === 'opening' || viewerMode === 'closing'"
@@ -1390,7 +1467,7 @@ onBeforeUnmount(() => {
 
           <!-- Mobil-Portrait: Icon-Reihe unterhalb des Rahmens (prev / close / next) -->
           <div
-            v-if="isMobilePortrait && viewerMode === 'viewing'"
+            v-if="isMobilePortrait && showLbMobileNav"
             class="lb-mnav lb-mnav--portrait"
           >
             <button
@@ -1399,7 +1476,13 @@ onBeforeUnmount(() => {
               aria-label="Vorheriges Bild"
               @click.stop="prevImage"
             >
-              <img :src="iconUrl('left.png')" alt="" draggable="false" />
+              <img
+                :src="iconUrl('left.png')"
+                alt=""
+                draggable="false"
+                decoding="sync"
+                fetchpriority="high"
+              />
             </button>
             <button
               type="button"
@@ -1407,7 +1490,13 @@ onBeforeUnmount(() => {
               aria-label="Schließen"
               @click.stop="closeLightbox"
             >
-              <img :src="iconUrl('close.png')" alt="" draggable="false" />
+              <img
+                :src="iconUrl('close.png')"
+                alt=""
+                draggable="false"
+                decoding="sync"
+                fetchpriority="high"
+              />
             </button>
             <button
               type="button"
@@ -1415,12 +1504,18 @@ onBeforeUnmount(() => {
               aria-label="Nächstes Bild"
               @click.stop="nextImage"
             >
-              <img :src="iconUrl('right.png')" alt="" draggable="false" />
+              <img
+                :src="iconUrl('right.png')"
+                alt=""
+                draggable="false"
+                decoding="sync"
+                fetchpriority="high"
+              />
             </button>
           </div>
 
           <!-- Mobil-Landscape: Ecken-Icons (info TL, close TR, prev BL, next BR) -->
-          <template v-if="isMobileLandscape && viewerMode === 'viewing'">
+          <template v-if="isMobileLandscape && showLbMobileNav">
             <button
               type="button"
               class="lb-mnav-btn lb-mnav--ls-info"
@@ -1432,6 +1527,8 @@ onBeforeUnmount(() => {
                 :src="iconUrl(infoVisible ? 'infoon.png' : 'infooff.png')"
                 alt=""
                 draggable="false"
+                decoding="sync"
+                fetchpriority="high"
               />
             </button>
             <button
@@ -1440,7 +1537,13 @@ onBeforeUnmount(() => {
               aria-label="Schließen"
               @click.stop="closeLightbox"
             >
-              <img :src="iconUrl('close.png')" alt="" draggable="false" />
+              <img
+                :src="iconUrl('close.png')"
+                alt=""
+                draggable="false"
+                decoding="sync"
+                fetchpriority="high"
+              />
             </button>
             <button
               type="button"
@@ -1448,7 +1551,13 @@ onBeforeUnmount(() => {
               aria-label="Vorheriges Bild"
               @click.stop="prevImage"
             >
-              <img :src="iconUrl('left.png')" alt="" draggable="false" />
+              <img
+                :src="iconUrl('left.png')"
+                alt=""
+                draggable="false"
+                decoding="sync"
+                fetchpriority="high"
+              />
             </button>
             <button
               type="button"
@@ -1456,7 +1565,13 @@ onBeforeUnmount(() => {
               aria-label="Nächstes Bild"
               @click.stop="nextImage"
             >
-              <img :src="iconUrl('right.png')" alt="" draggable="false" />
+              <img
+                :src="iconUrl('right.png')"
+                alt=""
+                draggable="false"
+                decoding="sync"
+                fetchpriority="high"
+              />
             </button>
           </template>
         </div>
@@ -1593,6 +1708,21 @@ onBeforeUnmount(() => {
 
 .lb-overlay {
   padding: 16px;
+  background-color: transparent;
+}
+
+.lb-backdrop {
+  background-color: rgb(0 0 0 / 0.9);
+}
+
+.lb-dim-enter-active,
+.lb-dim-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.lb-dim-enter-from,
+.lb-dim-leave-to {
+  opacity: 0;
 }
 
 .lb-overlay.lb-overlay--scroll-lock {
@@ -1747,15 +1877,11 @@ onBeforeUnmount(() => {
  *  das Bild inkl. Rahmen wird nie abgeschnitten (Landscape-Fix).
  * ===================================================================== */
 .lb-overlay--mobile {
-  /* Absolutes Schwarz → Android dimmt die Systemleisten dunkel. */
-  background-color: #000000;
+  /* Transparent: Thumbnails bleiben sichtbar, nur .lb-backdrop dimmt (90 %). */
+  background-color: transparent;
   height: 100dvh;
   min-height: 100dvh;
   bottom: auto;
-}
-
-.lb-overlay--mobile .lb-backdrop {
-  background-color: #000000;
 }
 
 .lb-overlay--mobile .lb-viewing-shell {

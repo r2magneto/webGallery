@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="de">
+<html lang="de" style="background-color: #000000;">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="./favicon.png" />
@@ -7,13 +7,20 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, viewport-fit=cover"
     />
-    <meta name="theme-color" content="#000000" />
+    <meta name="theme-color" content="#0a0a0a" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <link rel="manifest" href="./site.webmanifest" />
     <link rel="preload" href="./assets/cur_up.png" as="image" type="image/png" />
     <link rel="preload" href="./assets/cur_dn.png" as="image" type="image/png" />
     <link rel="preload" href="./assets/cur_l.png" as="image" type="image/png" />
     <link rel="preload" href="./assets/cur_r.png" as="image" type="image/png" />
     <link rel="preload" href="./assets/cur_x.png" as="image" type="image/png" />
     <link rel="preload" href="./assets/cur_v.png" as="image" type="image/png" />
+    <link rel="preload" href="./assets/left.png" as="image" type="image/png" />
+    <link rel="preload" href="./assets/right.png" as="image" type="image/png" />
+    <link rel="preload" href="./assets/close.png" as="image" type="image/png" />
+    <link rel="preload" href="./assets/infoon.png" as="image" type="image/png" />
+    <link rel="preload" href="./assets/infooff.png" as="image" type="image/png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -25,8 +32,8 @@
 
     <title>HUMANOID</title>
   </head>
-  <body>
-    <div id="app"></div>
+  <body style="background-color: #000000; margin: 0;">
+    <div id="app" style="background-color: #000000; min-height: 100svh;"></div>
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>

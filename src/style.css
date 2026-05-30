@@ -1,5 +1,12 @@
 @import 'tailwindcss';
 
+html,
+body,
+#app {
+  background-color: #000000 !important;
+  color: #ffffff;
+}
+
 @font-face {
   font-family: 'Web437 IBM VGA 8x14';
   src: url('../fonts/Web437_IBM_VGA_8x14.woff') format('woff');
