@@ -6,8 +6,8 @@
       "y": 0,
       "w": 12,
       "h": 8,
-      "src": "/images/gallery1/bild002.webp",
-      "caption": "HUMANOID Studio 3 - 2018-2025"
+      "src": "./images/gallery1/bild002.webp",
+      "caption": "HUMANOID Studio 3 / 2018-2025"
     },
     {
       "i": "bild001",
@@ -15,35 +15,7 @@
       "y": 0,
       "w": 13,
       "h": 9,
-      "src": "/images/gallery1/bild001.webp",
-      "caption": "HUMANOID Studio 3 - 2018-2025"
-    },
-    {
-      "i": "m_Screenshot 2026-03-16 17.21.16_upscale2",
-      "x": 2,
-      "y": 5,
-      "w": 11,
-      "h": 7,
-      "src": "/images/gallery1/m_Screenshot 2026-03-16 17.21.16_upscale2.webp",
-      "caption": "Flugmodus GmbH Collogne - Game Trailer Animation Mocap, Retarget, Edit"
-    },
-    {
-      "i": "m_Screenshot 2026-03-16 17.20.05_upsc",
-      "x": 13,
-      "y": 8,
-      "w": 12,
-      "h": 7,
-      "src": "/images/gallery1/m_Screenshot 2026-03-16 17.20.05_upsc.webp",
-      "caption": "Flugmodus GmbH Collogne - Game Trailer Animation Mocap, Retarget, Edit"
-    },
-    {
-      "i": "m_vlcsnap-2026-04-27-13h43m10s297",
-      "x": 25,
-      "y": 9,
-      "w": 12,
-      "h": 6,
-      "src": "/images/gallery1/m_vlcsnap-2026-04-27-13h43m10s297.webp",
-      "caption": "Flugmodus GmbH Collogne - Game Trailer Animation Mocap, Retarget, Edit"
+      "src": "./images/gallery1/bild001.webp"
     },
     {
       "i": "m_DSC04949",
@@ -51,7 +23,32 @@
       "y": 12,
       "w": 9,
       "h": 4,
-      "src": "/images/gallery1/m_DSC04949.webp"
+      "src": "./images/gallery1/m_DSC04949.webp"
+    },
+    {
+      "i": "m_Screenshot 2026-03-16 17.21.16_upscale2",
+      "x": 2,
+      "y": 5,
+      "w": 11,
+      "h": 7,
+      "src": "./images/gallery1/m_Screenshot 2026-03-16 17.21.16_upscale2.webp",
+      "caption": "Flugmodus GmbH Collogne - Game Trailer Animation / Mocap, Retarget, Edit"
+    },
+    {
+      "i": "m_Screenshot 2026-03-16 17.20.05_upsc",
+      "x": 13,
+      "y": 8,
+      "w": 12,
+      "h": 7,
+      "src": "./images/gallery1/m_Screenshot 2026-03-16 17.20.05_upsc.webp"
+    },
+    {
+      "i": "m_vlcsnap-2026-04-27-13h43m10s297",
+      "x": 25,
+      "y": 9,
+      "w": 12,
+      "h": 6,
+      "src": "./images/gallery1/m_vlcsnap-2026-04-27-13h43m10s297.webp"
     },
     {
       "i": "bild005",
@@ -59,8 +56,8 @@
       "y": 9,
       "w": 8,
       "h": 6,
-      "src": "/images/gallery1/bild005.webp",
-      "caption": "FixGames - Cut Sequences / Motioncapture & Cleanup"
+      "src": "./images/gallery1/bild005.webp",
+      "caption": "FixGames Korea - Cut Sequences / Motioncapture & Cleanup"
     },
     {
       "i": "m_Screenshot 2020-11-16 13.25.27",
@@ -68,8 +65,7 @@
       "y": 15,
       "w": 5,
       "h": 6,
-      "src": "/images/gallery1/m_Screenshot 2020-11-16 13.25.27.webp",
-      "caption": "FixGames - Cut Sequences / Motioncapture & Cleanup"
+      "src": "./images/gallery1/m_Screenshot 2020-11-16 13.25.27.webp"
     },
     {
       "i": "m_Screenshot 2020-11-16 13.26.42",
@@ -77,8 +73,7 @@
       "y": 15,
       "w": 5,
       "h": 6,
-      "src": "/images/gallery1/m_Screenshot 2020-11-16 13.26.42.webp",
-      "caption": "FixGames - Cut Sequences / Motioncapture & Cleanup"
+      "src": "./images/gallery1/m_Screenshot 2020-11-16 13.26.42.webp"
     },
     {
       "i": "bild003",
@@ -86,7 +81,7 @@
       "y": 15,
       "w": 11,
       "h": 6,
-      "src": "/images/gallery1/bild003.webp",
+      "src": "./images/gallery1/bild003.webp",
       "caption": "HuHn - Architektur / Custom Population Animation - Capture, Clean, Edit, Finish"
     },
     {
@@ -95,7 +90,7 @@
       "y": 15,
       "w": 8,
       "h": 7,
-      "src": "/images/gallery1/m_Screenshot 2026-03-16 17.24.27.webp",
+      "src": "./images/gallery1/m_Screenshot 2026-03-16 17.24.27.webp",
       "caption": "VERCE - Digital Fashion Engineering / Capture, Retarget, Edit, Finishing"
     },
     {
@@ -104,8 +99,7 @@
       "y": 26,
       "w": 11,
       "h": 6,
-      "src": "/images/gallery1/m_vlcsnap-2026-04-27-13h43m55s824_ed.webp",
-      "caption": "VERCE - Digital Fashion Engineering / Capture, Retarget, Edit, Finishing"
+      "src": "./images/gallery1/m_vlcsnap-2026-04-27-13h43m55s824_ed.webp"
     },
     {
       "i": "m_Screenshot 2023-04-05 17.05.27_up3",
@@ -113,17 +107,7 @@
       "y": 16,
       "w": 12,
       "h": 6,
-      "src": "/images/gallery1/m_Screenshot 2023-04-05 17.05.27_up3.webp",
-      "caption": "VERCE - Digital Fashion Engineering / Capture, Retarget, Edit, Finishing"
-    },
-    {
-      "i": "m_Screenshot 2026-03-13 13.58.38_03",
-      "x": 21,
-      "y": 21,
-      "w": 9,
-      "h": 5,
-      "src": "/images/gallery1/m_Screenshot 2026-03-13 13.58.38_03.webp",
-      "caption": "Sooii - Catwalk & Fashion Posing Animations / Capture, Edit, Finish"
+      "src": "./images/gallery1/m_Screenshot 2023-04-05 17.05.27_up3.webp"
     },
     {
       "i": "m_Screenshot 2026-03-16 17.25.35_upsca",
@@ -131,8 +115,7 @@
       "y": 22,
       "w": 10,
       "h": 5,
-      "src": "/images/gallery1/m_Screenshot 2026-03-16 17.25.35_upsca.webp",
-      "caption": "VERCE - Digital Fashion Engineering / Capture, Retarget, Edit, Finishing"
+      "src": "./images/gallery1/m_Screenshot 2026-03-16 17.25.35_upsca.webp"
     },
     {
       "i": "bild024",
@@ -140,8 +123,17 @@
       "y": 22,
       "w": 9,
       "h": 5,
-      "src": "/images/gallery1/bild024.webp",
-      "caption": "WDR - Hirschhausens Quiz des Menschen / Various Motioncapture Scenes"
+      "src": "./images/gallery1/bild024.webp",
+      "caption": "WDR - Hirschhausens Quiz des Menschen / various motion capture scenes (dots only)"
+    },
+    {
+      "i": "bild012",
+      "x": 21,
+      "y": 21,
+      "w": 9,
+      "h": 5,
+      "src": "./images/gallery1/bild012.webp",
+      "caption": "Capture Gear / Real-time data backup, full system UPS, and wireless timecode sync for audio, video, mocap & finger tracking."
     },
     {
       "i": "bild011",
@@ -149,7 +141,7 @@
       "y": 21,
       "w": 9,
       "h": 5,
-      "src": "/images/gallery1/bild011.webp",
+      "src": "./images/gallery1/bild011.webp",
       "caption": "our modified threadmill - up to 29km/h full sprint speed  (deathtrap)"
     },
     {
@@ -158,7 +150,7 @@
       "y": 27,
       "w": 10,
       "h": 5,
-      "src": "/images/gallery1/m_Screenshot 2026-03-17 11.09.47_upscaled2.webp",
+      "src": "./images/gallery1/m_Screenshot 2026-03-17 11.09.47_upscaled2.webp",
       "caption": "VR Coaster - Virtual Reality Themepark Experiences / Capture & Cleanup"
     },
     {
@@ -167,79 +159,8 @@
       "y": 27,
       "w": 6,
       "h": 9,
-      "src": "/images/gallery1/m_Screenshot 2026-03-17 11.14.34_ups.webp",
+      "src": "./images/gallery1/m_Screenshot 2026-03-17 11.14.34_ups.webp",
       "caption": "VR Coaster - Virtual Reality Themepark Experiences / Capture & Cleanup"
-    },
-    {
-      "i": "bild009",
-      "x": 32,
-      "y": 26,
-      "w": 12,
-      "h": 6,
-      "src": "/images/gallery1/bild009.webp",
-      "caption": "clients recording behind the scenes"
-    },
-    {
-      "i": "m_Screenshot 2026-03-17 11.19.04_ups",
-      "x": 4,
-      "y": 84,
-      "w": 12,
-      "h": 7,
-      "src": "/images/gallery1/m_Screenshot 2026-03-17 11.19.04_ups.webp",
-      "caption": "TheIllestAgency - AEIOU - YKKE / Music Video"
-    },
-    {
-      "i": "bild007",
-      "x": 1,
-      "y": 36,
-      "w": 10,
-      "h": 5,
-      "src": "/images/gallery1/bild007.webp",
-      "caption": "TimeRideVR Collogne - Population Animations"
-    },
-    {
-      "i": "bild008",
-      "x": 28,
-      "y": 49,
-      "w": 9,
-      "h": 6,
-      "src": "/images/gallery1/bild008.webp",
-      "caption": "undisclosed client / project - MotionCapture / Edit / Finish / Render"
-    },
-    {
-      "i": "bild006",
-      "x": 0,
-      "y": 65,
-      "w": 10,
-      "h": 7,
-      "src": "/images/gallery1/bild006.webp"
-    },
-    {
-      "i": "bild010",
-      "x": 3,
-      "y": 53,
-      "w": 9,
-      "h": 5,
-      "src": "/images/gallery1/bild010.webp",
-      "caption": "Vodafone MoonRide VR Experience Cebit - MotionCapture / Retarget / Edit"
-    },
-    {
-      "i": "bild012",
-      "x": 2,
-      "y": 41,
-      "w": 9,
-      "h": 5,
-      "src": "/images/gallery1/bild012.webp",
-      "caption": "Integrated Capture Gear - Realtime Data Backup / Full PowerBackup UPS / wireless timecode sync for Audio, Video, Mocap & Finger Tracking."
-    },
-    {
-      "i": "bild016",
-      "x": 19,
-      "y": 50,
-      "w": 9,
-      "h": 5,
-      "src": "/images/gallery1/bild016.webp",
-      "caption": "Training Video - Disarming Techniques in Close Protection"
     },
     {
       "i": "m_2021-11-16 01.49.36",
@@ -247,42 +168,7 @@
       "y": 32,
       "w": 6,
       "h": 7,
-      "src": "/images/gallery1/m_2021-11-16 01.49.36.webp"
-    },
-    {
-      "i": "bild20",
-      "x": 6,
-      "y": 58,
-      "w": 13,
-      "h": 7,
-      "src": "/images/gallery1/bild20.webp",
-      "caption": "GroundStudios - Schumann VR Experience Düsseldorf"
-    },
-    {
-      "i": "bild017",
-      "x": 19,
-      "y": 44,
-      "w": 9,
-      "h": 6,
-      "src": "/images/gallery1/bild017.webp",
-      "caption": "Training Video - Disarming Techniques in Close Protection"
-    },
-    {
-      "i": "bild014",
-      "x": 26,
-      "y": 78,
-      "w": 14,
-      "h": 8,
-      "src": "/images/gallery1/bild014.webp",
-      "caption": "Stabilo - Finger & Pen Capture"
-    },
-    {
-      "i": "bild021",
-      "x": 38,
-      "y": 32,
-      "w": 9,
-      "h": 6,
-      "src": "/images/gallery1/bild021.webp"
+      "src": "./images/gallery1/m_2021-11-16 01.49.36.webp"
     },
     {
       "i": "m_DSC01823",
@@ -290,7 +176,34 @@
       "y": 32,
       "w": 11,
       "h": 7,
-      "src": "/images/gallery1/m_DSC01823.webp"
+      "src": "./images/gallery1/m_DSC01823.webp",
+      "caption": "HUMANOID Studio 2 / 2013-2018"
+    },
+    {
+      "i": "DSC06368",
+      "x": 32,
+      "y": 26,
+      "w": 10,
+      "h": 6,
+      "src": "./images/gallery1/DSC06368.webp",
+      "caption": "Clinical & Care Team Training Animations"
+    },
+    {
+      "i": "bild021",
+      "x": 38,
+      "y": 32,
+      "w": 10,
+      "h": 6,
+      "src": "./images/gallery1/bild021.webp"
+    },
+    {
+      "i": "bild007",
+      "x": 1,
+      "y": 36,
+      "w": 10,
+      "h": 5,
+      "src": "./images/gallery1/bild007.webp",
+      "caption": "TimeRideVR Collogne - Population Animations"
     },
     {
       "i": "bild015",
@@ -298,320 +211,17 @@
       "y": 37,
       "w": 10,
       "h": 6,
-      "src": "/images/gallery1/bild015.webp",
-      "caption": "TimeRide VR Collogne - Population"
+      "src": "./images/gallery1/bild015.webp",
+      "caption": "TimeRideVR Collogne - Population Animations"
     },
     {
-      "i": "m_Screenshot 2020-04-23 22.59.05",
-      "x": 7,
-      "y": 78,
-      "w": 11,
-      "h": 6,
-      "src": "/images/gallery1/m_Screenshot 2020-04-23 22.59.05.webp"
-    },
-    {
-      "i": "bild023",
-      "x": 10,
-      "y": 71,
-      "w": 13,
-      "h": 7,
-      "src": "/images/gallery1/bild023.webp"
-    },
-    {
-      "i": "m_Screenshot 2022-09-01 11.11.20",
-      "x": 37,
-      "y": 86,
-      "w": 11,
-      "h": 6,
-      "src": "/images/gallery1/m_Screenshot 2022-09-01 11.11.20.webp",
-      "caption": "Submilimeter Tracking"
-    },
-    {
-      "i": "m_Screenshot 2020-12-30 23.17.04",
-      "x": 23,
-      "y": 71,
-      "w": 9,
-      "h": 7,
-      "src": "/images/gallery1/m_Screenshot 2020-12-30 23.17.04.webp",
-      "caption": "Virtual Reality Perception Study - pulp fiction sequence"
-    },
-    {
-      "i": "m_vlcsnap-2026-04-27-13h42m03s910_ed",
-      "x": 14,
-      "y": 105,
-      "w": 12,
-      "h": 6,
-      "src": "/images/gallery1/m_vlcsnap-2026-04-27-13h42m03s910_ed.webp",
-      "caption": "Tortuga Games / Capture, Cleanup, Retarget"
-    },
-    {
-      "i": "m_DSC03237(1)",
-      "x": 32,
-      "y": 66,
-      "w": 12,
-      "h": 7,
-      "src": "/images/gallery1/m_DSC03237(1).webp"
-    },
-    {
-      "i": "DSC06368",
+      "i": "bild009",
       "x": 28,
       "y": 32,
       "w": 10,
       "h": 5,
-      "src": "/images/gallery1/DSC06368.webp",
-      "caption": "Clinical & Care Team Training Animation"
-    },
-    {
-      "i": "m_DSC03686",
-      "x": 10,
-      "y": 65,
-      "w": 9,
-      "h": 6,
-      "src": "/images/gallery1/m_DSC03686.webp"
-    },
-    {
-      "i": "bild004",
-      "x": 16,
-      "y": 84,
-      "w": 10,
-      "h": 7,
-      "src": "/images/gallery1/bild004.webp",
-      "caption": "YKKE - TheIllestAgency / AEIOU"
-    },
-    {
-      "i": "m_Screenshot 2026-03-13 12.21.47",
-      "x": 26,
-      "y": 86,
-      "w": 11,
-      "h": 5,
-      "src": "/images/gallery1/m_Screenshot 2026-03-13 12.21.47.webp"
-    },
-    {
-      "i": "m_20170524_103555",
-      "x": 26,
-      "y": 109,
-      "w": 5,
-      "h": 8,
-      "src": "/images/gallery1/m_20170524_103555.webp",
-      "caption": "it might seem wierd..    but i enjoy cable management"
-    },
-    {
-      "i": "m_Screenshot 2020-05-05 14.54.38",
-      "x": 18,
-      "y": 78,
-      "w": 8,
-      "h": 6,
-      "src": "/images/gallery1/m_Screenshot 2020-05-05 14.54.38.webp"
-    },
-    {
-      "i": "m_Screenshot 2022-08-15 14.03.12 - Kopie",
-      "x": 19,
-      "y": 62,
-      "w": 13,
-      "h": 9,
-      "src": "/images/gallery1/m_Screenshot 2022-08-15 14.03.12 - Kopie.webp"
-    },
-    {
-      "i": "m_Screenshot 2026-03-13 14.02.07_up3",
-      "x": 32,
-      "y": 73,
-      "w": 10,
-      "h": 5,
-      "src": "/images/gallery1/m_Screenshot 2026-03-13 14.02.07_up3.webp",
-      "caption": "The Secret Store - Promotion Video / Animations for Second life Avatars"
-    },
-    {
-      "i": "m_DSC04950",
-      "x": 1,
-      "y": 72,
-      "w": 9,
-      "h": 6,
-      "src": "/images/gallery1/m_DSC04950.webp"
-    },
-    {
-      "i": "m_20180228_111354",
-      "x": 19,
-      "y": 39,
-      "w": 9,
-      "h": 5,
-      "src": "/images/gallery1/m_20180228_111354.webp"
-    },
-    {
-      "i": "m_vlcsnap-2026-04-27-00h18m39s719_edit",
-      "x": 12,
-      "y": 97,
-      "w": 14,
-      "h": 8,
-      "src": "/images/gallery1/m_vlcsnap-2026-04-27-00h18m39s719_edit.webp"
-    },
-    {
-      "i": "m_20230921_204454",
-      "x": 9,
-      "y": 111,
-      "w": 8,
-      "h": 4,
-      "src": "/images/gallery1/m_20230921_204454.webp"
-    },
-    {
-      "i": "m_20190831_094932",
-      "x": 37,
-      "y": 92,
-      "w": 8,
-      "h": 5,
-      "src": "/images/gallery1/m_20190831_094932.webp"
-    },
-    {
-      "i": "m_Screenshot 2021-03-19 12.18.58",
-      "x": 26,
-      "y": 97,
-      "w": 8,
-      "h": 5,
-      "src": "/images/gallery1/m_Screenshot 2021-03-19 12.18.58.webp"
-    },
-    {
-      "i": "m_Screenshot 2026-03-17 11.35.21_up",
-      "x": 34,
-      "y": 97,
-      "w": 8,
-      "h": 5,
-      "src": "/images/gallery1/m_Screenshot 2026-03-17 11.35.21_up.webp"
-    },
-    {
-      "i": "m_EntgegenkommendeBahn_f1195_0000_small",
-      "x": 28,
-      "y": 43,
-      "w": 13,
-      "h": 6,
-      "src": "/images/gallery1/m_EntgegenkommendeBahn_f1195_0000_small.webp"
-    },
-    {
-      "i": "m_20180503_142845",
-      "x": 31,
-      "y": 109,
-      "w": 5,
-      "h": 8,
-      "src": "/images/gallery1/m_20180503_142845.webp"
-    },
-    {
-      "i": "m_20180530_131441",
-      "x": 17,
-      "y": 111,
-      "w": 9,
-      "h": 6,
-      "src": "/images/gallery1/m_20180530_131441.webp"
-    },
-    {
-      "i": "m_Screenshot 2026-03-13 12.20.34_upscaled",
-      "x": 10,
-      "y": 91,
-      "w": 11,
-      "h": 6,
-      "src": "/images/gallery1/m_Screenshot 2026-03-13 12.20.34_upscaled.webp"
-    },
-    {
-      "i": "m_Screenshot 2026-03-13 12.28.56_up",
-      "x": 1,
-      "y": 97,
-      "w": 11,
-      "h": 5,
-      "src": "/images/gallery1/m_Screenshot 2026-03-13 12.28.56_up.webp"
-    },
-    {
-      "i": "m_Screenshot 2022-08-15 13.54.45",
-      "x": 26,
-      "y": 102,
-      "w": 11,
-      "h": 7,
-      "src": "/images/gallery1/m_Screenshot 2022-08-15 13.54.45.webp"
-    },
-    {
-      "i": "m_Screenshot 2026-03-16 17.07.02_upscaled2",
-      "x": 19,
-      "y": 55,
-      "w": 13,
-      "h": 7,
-      "src": "/images/gallery1/m_Screenshot 2026-03-16 17.07.02_upscaled2.webp"
-    },
-    {
-      "i": "m_20180605_105827",
-      "x": 24,
-      "y": 117,
-      "w": 8,
-      "h": 5,
-      "src": "/images/gallery1/m_20180605_105827.webp",
-      "caption": "CEBIT - Vodafone Moonride / Motioncapture System Installation &  Operation"
-    },
-    {
-      "i": "m_bka2026-05-28 13.07.59",
-      "x": 37,
-      "y": 49,
-      "w": 11,
-      "h": 6,
-      "src": "/images/gallery1/m_bka2026-05-28 13.07.59.webp"
-    },
-    {
-      "i": "m_bka12h08m27s749",
-      "x": 7,
-      "y": 46,
-      "w": 12,
-      "h": 7,
-      "src": "/images/gallery1/m_bka12h08m27s749.webp"
-    },
-    {
-      "i": "m_Eville-screenshot_acora_trapped",
-      "x": 2,
-      "y": 105,
-      "w": 12,
-      "h": 6,
-      "src": "/images/gallery1/m_Eville-screenshot_acora_trapped.webp"
-    },
-    {
-      "i": "m_Screenshot 2026-03-17 11.34.54_up",
-      "x": 37,
-      "y": 102,
-      "w": 10,
-      "h": 6,
-      "src": "/images/gallery1/m_Screenshot 2026-03-17 11.34.54_up.webp"
-    },
-    {
-      "i": "DSC02737_PNglove",
-      "x": 30,
-      "y": 91,
-      "w": 7,
-      "h": 6,
-      "src": "/images/gallery1/DSC02737_PNglove.webp"
-    },
-    {
-      "i": "m_Screenshot 2026-03-16 17.11.33_fritzi",
-      "x": 36,
-      "y": 109,
-      "w": 9,
-      "h": 5,
-      "src": "/images/gallery1/m_Screenshot 2026-03-16 17.11.33_fritzi.webp"
-    },
-    {
-      "i": "m_vlcsnap-2026-04-26-22h37m12s219",
-      "x": 12,
-      "y": 53,
-      "w": 7,
-      "h": 5,
-      "src": "/images/gallery1/m_vlcsnap-2026-04-26-22h37m12s219.webp"
-    },
-    {
-      "i": "vlcsnap-2026-05-04-14h28m16s589",
-      "x": 6,
-      "y": 117,
-      "w": 11,
-      "h": 6,
-      "src": "/images/gallery1/vlcsnap-2026-05-04-14h28m16s589.webp"
-    },
-    {
-      "i": "m_Screenshot 2026-03-17 11.22.05_up",
-      "x": 21,
-      "y": 91,
-      "w": 9,
-      "h": 6,
-      "src": "/images/gallery1/m_Screenshot 2026-03-17 11.22.05_up.webp"
+      "src": "./images/gallery1/bild009.webp",
+      "caption": "TimeRideVR - clients recording behind the scenes"
     },
     {
       "i": "vlcsnap-2026-05-27-13h29m57s563",
@@ -619,7 +229,405 @@
       "y": 39,
       "w": 8,
       "h": 7,
-      "src": "/images/gallery1/vlcsnap-2026-05-27-13h29m57s563.webp"
+      "src": "./images/gallery1/vlcsnap-2026-05-27-13h29m57s563.webp"
+    },
+    {
+      "i": "m_20180228_111354",
+      "x": 19,
+      "y": 39,
+      "w": 9,
+      "h": 5,
+      "src": "./images/gallery1/m_20180228_111354.webp"
+    },
+    {
+      "i": "m_EntgegenkommendeBahn_f1195_0000_small",
+      "x": 28,
+      "y": 43,
+      "w": 13,
+      "h": 6,
+      "src": "./images/gallery1/m_EntgegenkommendeBahn_f1195_0000_small.webp",
+      "caption": "TimeRideVR Collogne - 3D Scene & Render by GroundStudios GmbH"
+    },
+    {
+      "i": "m_Screenshot 2026-03-13 13.58.38_03",
+      "x": 2,
+      "y": 41,
+      "w": 9,
+      "h": 5,
+      "src": "./images/gallery1/m_Screenshot 2026-03-13 13.58.38_03.webp",
+      "caption": "Sooii - Catwalk & Fashion Posing Animations / Capture, Edit, Finish"
+    },
+    {
+      "i": "m_bka12h08m27s749",
+      "x": 7,
+      "y": 46,
+      "w": 12,
+      "h": 7,
+      "src": "./images/gallery1/m_bka12h08m27s749.webp",
+      "caption": "Training Video - Disarming Techniques in Close Protection"
+    },
+    {
+      "i": "bild017",
+      "x": 19,
+      "y": 44,
+      "w": 9,
+      "h": 6,
+      "src": "./images/gallery1/bild017.webp"
+    },
+    {
+      "i": "bild016",
+      "x": 19,
+      "y": 50,
+      "w": 9,
+      "h": 5,
+      "src": "./images/gallery1/bild016.webp"
+    },
+    {
+      "i": "bild008",
+      "x": 28,
+      "y": 49,
+      "w": 9,
+      "h": 6,
+      "src": "./images/gallery1/bild008.webp"
+    },
+    {
+      "i": "m_bka2026-05-28 13.07.59",
+      "x": 37,
+      "y": 49,
+      "w": 11,
+      "h": 6,
+      "src": "./images/gallery1/m_bka2026-05-28 13.07.59.webp"
+    },
+    {
+      "i": "bild010",
+      "x": 3,
+      "y": 53,
+      "w": 9,
+      "h": 5,
+      "src": "./images/gallery1/bild010.webp",
+      "caption": "Vodafone MoonRide - VR Experience Cebit / MotionCapture, Retarget, Edit"
+    },
+    {
+      "i": "m_vlcsnap-2026-04-26-22h37m12s219",
+      "x": 12,
+      "y": 53,
+      "w": 7,
+      "h": 5,
+      "src": "./images/gallery1/m_vlcsnap-2026-04-26-22h37m12s219.webp"
+    },
+    {
+      "i": "bild20",
+      "x": 6,
+      "y": 58,
+      "w": 13,
+      "h": 7,
+      "src": "./images/gallery1/bild20.webp",
+      "caption": "Schumann VR Experience Düsseldorf - Population Animation Capture, Retarget, Edit (3D Scenes & Render by GroundStudios GmbH)"
+    },
+    {
+      "i": "m_Screenshot 2026-03-16 17.07.02_upscaled2",
+      "x": 19,
+      "y": 55,
+      "w": 13,
+      "h": 7,
+      "src": "./images/gallery1/m_Screenshot 2026-03-16 17.07.02_upscaled2.webp",
+      "caption": "A Current State - Musikvideo \"Number One\" / Capture, Cleanup, Retarget, Edit, Finish"
+    },
+    {
+      "i": "m_Screenshot 2026-03-13 11.46.30_up",
+      "x": 32,
+      "y": 55,
+      "w": 12,
+      "h": 5,
+      "src": "./images/gallery1/m_Screenshot 2026-03-13 11.46.30_up.webp",
+      "caption": "A Current State - Musikvideo \"Number One\" / Capture, Cleanup, Retarget, Edit, Finish"
+    },
+    {
+      "i": "m_Screenshot 2026-03-13 11.51.17_up",
+      "x": 32,
+      "y": 60,
+      "w": 13,
+      "h": 6,
+      "src": "./images/gallery1/m_Screenshot 2026-03-13 11.51.17_up.webp"
+    },
+    {
+      "i": "bild006",
+      "x": 0,
+      "y": 65,
+      "w": 10,
+      "h": 7,
+      "src": "./images/gallery1/bild006.webp"
+    },
+    {
+      "i": "m_DSC03686",
+      "x": 10,
+      "y": 65,
+      "w": 9,
+      "h": 6,
+      "src": "./images/gallery1/m_DSC03686.webp"
+    },
+    {
+      "i": "m_Screenshot 2022-08-15 14.03.12 - Kopie",
+      "x": 19,
+      "y": 62,
+      "w": 13,
+      "h": 9,
+      "src": "./images/gallery1/m_Screenshot 2022-08-15 14.03.12 - Kopie.webp"
+    },
+    {
+      "i": "m_DSC04950",
+      "x": 1,
+      "y": 72,
+      "w": 9,
+      "h": 6,
+      "src": "./images/gallery1/m_DSC04950.webp"
+    },
+    {
+      "i": "bild023",
+      "x": 10,
+      "y": 71,
+      "w": 13,
+      "h": 7,
+      "src": "./images/gallery1/bild023.webp",
+      "caption": "the backoffice"
+    },
+    {
+      "i": "m_DSC03237(1)",
+      "x": 32,
+      "y": 66,
+      "w": 12,
+      "h": 7,
+      "src": "./images/gallery1/m_DSC03237(1).webp"
+    },
+    {
+      "i": "m_Screenshot 2020-12-30 23.17.04",
+      "x": 23,
+      "y": 71,
+      "w": 9,
+      "h": 7,
+      "src": "./images/gallery1/m_Screenshot 2020-12-30 23.17.04.webp",
+      "caption": "TH Collogne - virtual reality perception study - pulp fiction sequence / Capture & Cleanup"
+    },
+    {
+      "i": "m_Screenshot 2026-03-13 14.02.07_up3",
+      "x": 32,
+      "y": 73,
+      "w": 10,
+      "h": 5,
+      "src": "./images/gallery1/m_Screenshot 2026-03-13 14.02.07_up3.webp",
+      "caption": "The Secret Store - Promotion Video / Animations for Second life Avatars"
+    },
+    {
+      "i": "m_Screenshot 2020-04-23 22.59.05",
+      "x": 7,
+      "y": 78,
+      "w": 11,
+      "h": 6,
+      "src": "./images/gallery1/m_Screenshot 2020-04-23 22.59.05.webp"
+    },
+    {
+      "i": "m_Screenshot 2020-05-05 14.54.38",
+      "x": 18,
+      "y": 78,
+      "w": 8,
+      "h": 6,
+      "src": "./images/gallery1/m_Screenshot 2020-05-05 14.54.38.webp"
+    },
+    {
+      "i": "m_Screenshot 2026-03-17 11.19.04_ups",
+      "x": 4,
+      "y": 84,
+      "w": 12,
+      "h": 7,
+      "src": "./images/gallery1/m_Screenshot 2026-03-17 11.19.04_ups.webp",
+      "caption": "TheIllestAgency / AEIOU / YKKE - Music Video / Capture & Cleanup"
+    },
+    {
+      "i": "bild004",
+      "x": 16,
+      "y": 84,
+      "w": 10,
+      "h": 7,
+      "src": "./images/gallery1/bild004.webp"
+    },
+    {
+      "i": "m_Screenshot 2026-03-13 12.21.47",
+      "x": 26,
+      "y": 86,
+      "w": 11,
+      "h": 5,
+      "src": "./images/gallery1/m_Screenshot 2026-03-13 12.21.47.webp"
+    },
+    {
+      "i": "m_Screenshot 2026-03-17 11.22.05_up",
+      "x": 21,
+      "y": 91,
+      "w": 9,
+      "h": 6,
+      "src": "./images/gallery1/m_Screenshot 2026-03-17 11.22.05_up.webp"
+    },
+    {
+      "i": "m_Screenshot 2026-03-13 12.20.34_upscaled",
+      "x": 10,
+      "y": 91,
+      "w": 11,
+      "h": 6,
+      "src": "./images/gallery1/m_Screenshot 2026-03-13 12.20.34_upscaled.webp"
+    },
+    {
+      "i": "m_Screenshot 2026-03-13 12.28.56_up",
+      "x": 1,
+      "y": 97,
+      "w": 11,
+      "h": 5,
+      "src": "./images/gallery1/m_Screenshot 2026-03-13 12.28.56_up.webp"
+    },
+    {
+      "i": "m_vlcsnap-2026-04-27-00h18m39s719_edit",
+      "x": 12,
+      "y": 97,
+      "w": 14,
+      "h": 8,
+      "src": "./images/gallery1/m_vlcsnap-2026-04-27-00h18m39s719_edit.webp",
+      "caption": "VestGames GmbH - Various Game Animations / Capture & Cleanup"
+    },
+    {
+      "i": "m_vlcsnap-2026-04-27-13h42m03s910_ed",
+      "x": 14,
+      "y": 105,
+      "w": 12,
+      "h": 6,
+      "src": "./images/gallery1/m_vlcsnap-2026-04-27-13h42m03s910_ed.webp",
+      "caption": "VestGames GmbH - Various Game Animations / Capture & Cleanup"
+    },
+    {
+      "i": "m_Eville-screenshot_acora_trapped",
+      "x": 2,
+      "y": 105,
+      "w": 12,
+      "h": 6,
+      "src": "./images/gallery1/m_Eville-screenshot_acora_trapped.webp",
+      "caption": "VestGames GmbH / Eville - a multiplayer game crafted with passion & talent (Picture by Vestgames)"
+    },
+    {
+      "i": "bild014",
+      "x": 26,
+      "y": 78,
+      "w": 14,
+      "h": 8,
+      "src": "./images/gallery1/bild014.webp",
+      "caption": "Schwan-Stabilo - Finger & Pen Capture"
+    },
+    {
+      "i": "m_Screenshot 2022-09-01 11.11.20",
+      "x": 37,
+      "y": 86,
+      "w": 11,
+      "h": 6,
+      "src": "./images/gallery1/m_Screenshot 2022-09-01 11.11.20.webp",
+      "caption": "Sub-millimeter Tracking – Finding 256 positions within a single pixel through grayscale analysis"
+    },
+    {
+      "i": "DSC02737_PNglove",
+      "x": 30,
+      "y": 91,
+      "w": 7,
+      "h": 6,
+      "src": "./images/gallery1/DSC02737_PNglove.webp",
+      "caption": "tracking fingers is basically more difficult than tracking a human body"
+    },
+    {
+      "i": "m_20190831_094932",
+      "x": 37,
+      "y": 92,
+      "w": 8,
+      "h": 5,
+      "src": "./images/gallery1/m_20190831_094932.webp",
+      "caption": "Selfmade Finger Tracking Gloves with Active Markers & RF Communication"
+    },
+    {
+      "i": "m_Screenshot 2021-03-19 12.18.58",
+      "x": 26,
+      "y": 97,
+      "w": 8,
+      "h": 5,
+      "src": "./images/gallery1/m_Screenshot 2021-03-19 12.18.58.webp"
+    },
+    {
+      "i": "m_Screenshot 2026-03-17 11.35.21_up",
+      "x": 34,
+      "y": 97,
+      "w": 8,
+      "h": 5,
+      "src": "./images/gallery1/m_Screenshot 2026-03-17 11.35.21_up.webp"
+    },
+    {
+      "i": "m_Screenshot 2026-03-17 11.34.54_up",
+      "x": 37,
+      "y": 102,
+      "w": 10,
+      "h": 6,
+      "src": "./images/gallery1/m_Screenshot 2026-03-17 11.34.54_up.webp"
+    },
+    {
+      "i": "m_Screenshot 2022-08-15 13.54.45",
+      "x": 26,
+      "y": 102,
+      "w": 11,
+      "h": 7,
+      "src": "./images/gallery1/m_Screenshot 2022-08-15 13.54.45.webp"
+    },
+    {
+      "i": "m_20230921_204454",
+      "x": 9,
+      "y": 111,
+      "w": 8,
+      "h": 4,
+      "src": "./images/gallery1/m_20230921_204454.webp"
+    },
+    {
+      "i": "m_20180530_131441",
+      "x": 17,
+      "y": 111,
+      "w": 9,
+      "h": 6,
+      "src": "./images/gallery1/m_20180530_131441.webp",
+      "caption": "Vodafone Cebit - capture system hardware installation & operation"
+    },
+    {
+      "i": "m_20180605_105827",
+      "x": 24,
+      "y": 117,
+      "w": 8,
+      "h": 5,
+      "src": "./images/gallery1/m_20180605_105827.webp",
+      "caption": "CEBIT - Vodafone Moonride / Motioncapture System Installation &  Operation"
+    },
+    {
+      "i": "m_20170524_103555",
+      "x": 26,
+      "y": 109,
+      "w": 5,
+      "h": 8,
+      "src": "./images/gallery1/m_20170524_103555.webp",
+      "caption": "it might seem wierd..    but i enjoy cable management"
+    },
+    {
+      "i": "m_20180503_142845",
+      "x": 31,
+      "y": 109,
+      "w": 5,
+      "h": 8,
+      "src": "./images/gallery1/m_20180503_142845.webp"
+    },
+    {
+      "i": "m_Screenshot 2026-03-16 17.11.33_fritzi",
+      "x": 36,
+      "y": 109,
+      "w": 9,
+      "h": 5,
+      "src": "./images/gallery1/m_Screenshot 2026-03-16 17.11.33_fritzi.webp",
+      "caption": "TrickStudio - Fritzi / Evaluating technology options and recommending inertial suits over optical systems"
     },
     {
       "i": "m_DSC04253",
@@ -627,15 +635,15 @@
       "y": 117,
       "w": 9,
       "h": 6,
-      "src": "/images/gallery1/m_DSC04253.webp"
+      "src": "./images/gallery1/m_DSC04253.webp"
     },
     {
-      "i": "m_Screenshot 2021-05-12 15.04.18",
-      "x": 26,
-      "y": 123,
+      "i": "vlcsnap-2026-05-04-14h28m16s589",
+      "x": 6,
+      "y": 117,
       "w": 11,
-      "h": 7,
-      "src": "/images/gallery1/m_Screenshot 2021-05-12 15.04.18.webp",
+      "h": 6,
+      "src": "./images/gallery1/vlcsnap-2026-05-04-14h28m16s589.webp",
       "caption": "Elberfeld Kreation - Live Stage Projection Performance"
     },
     {
@@ -644,23 +652,15 @@
       "y": 123,
       "w": 12,
       "h": 7,
-      "src": "/images/gallery1/vlcsnap-2026-05-04-14h24m57s630.webp"
+      "src": "./images/gallery1/vlcsnap-2026-05-04-14h24m57s630.webp"
     },
     {
-      "i": "m_Screenshot 2026-03-13 11.46.30_up",
-      "x": 32,
-      "y": 55,
-      "w": 12,
-      "h": 5,
-      "src": "/images/gallery1/m_Screenshot 2026-03-13 11.46.30_up.webp"
-    },
-    {
-      "i": "m_Screenshot 2026-03-13 11.51.17_up",
-      "x": 32,
-      "y": 60,
-      "w": 13,
-      "h": 6,
-      "src": "/images/gallery1/m_Screenshot 2026-03-13 11.51.17_up.webp"
+      "i": "m_Screenshot 2021-05-12 15.04.18",
+      "x": 26,
+      "y": 123,
+      "w": 11,
+      "h": 7,
+      "src": "./images/gallery1/m_Screenshot 2021-05-12 15.04.18.webp"
     }
   ]
 }

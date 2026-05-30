@@ -7,7 +7,7 @@
       "w": 12,
       "h": 7,
       "src": "./images/gallery2/build3_20151013_124605.webp",
-      "caption": "In 2013, 360 video was not yet available. So i rigged my own setup"
+      "caption": "Back in 2013, off-the-shelf 360 video didn’t exist - so I engineered my own setup"
     },
     {
       "i": "build20160916_084253",
@@ -16,7 +16,7 @@
       "w": 12,
       "h": 10,
       "src": "./images/gallery2/build20160916_084253.webp",
-      "caption": "The Challenge was, to get the nodal points as close together as possible.  i took the image sensors out of the cameras and used specific lenses"
+      "caption": "The challenge: getting the nodal points as close together as possible. I stripped the image sensors out of the cameras and paired them with selected lenses"
     },
     {
       "i": "build20170713_164001",
@@ -52,7 +52,7 @@
       "w": 7,
       "h": 13,
       "src": "./images/gallery2/build3_DSC01985.webp",
-      "caption": "5 cameras with 4k resolution cover the 360° view for a super high resolution 360 image."
+      "caption": "Five 4K cameras cover the 360° view, resulting in a super-high-resolution panorama"
     },
     {
       "i": "amd3_IMG_0229-upscale",
@@ -104,8 +104,7 @@
       "y": 24,
       "w": 12,
       "h": 7,
-      "src": "./images/gallery2/cebit_vodafone_ar_cas.webp",
-      "caption": "Vodafone - Brand Experience Space Walkthrough"
+      "src": "./images/gallery2/cebit_vodafone_ar_cas.webp"
     },
     {
       "i": "halliDSC00321",
@@ -114,7 +113,7 @@
       "w": 14,
       "h": 8,
       "src": "./images/gallery2/halliDSC00321.webp",
-      "caption": "Pro7 Berlin / TV-Show (Circus Halligalli) Full Coverage in front and behind the scenes"
+      "caption": "Pro7 - Circus Halligalli, Studio Berlin / full coverage both in front of and behind the camera"
     },
     {
       "i": "halli3_DSC00304",
@@ -138,7 +137,8 @@
       "y": 31,
       "w": 12,
       "h": 7,
-      "src": "./images/gallery2/halliRend4.webp"
+      "src": "./images/gallery2/halliRend4.webp",
+      "caption": "Briefing the hosts, slightly suspicious of the camera"
     },
     {
       "i": "halliScreenshot 2026-05-04 22.21.55",

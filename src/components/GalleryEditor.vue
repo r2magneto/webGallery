@@ -40,6 +40,15 @@ const props = defineProps({
   },
 })
 
+/** Editor-Thumbnails: nur leichte `_proxy.webp` laden; JSON behält Original-Pfade. */
+function toProxySrc(src) {
+  if (!src) return src
+  const s = String(src)
+  const pathOnly = s.split('?')[0]
+  if (/_proxy\.webp$/i.test(pathOnly)) return s
+  return s.replace(/(\.[^./?#]+)([?#].*)?$/i, '_proxy$1$2')
+}
+
 /** Standard-Spaltenbreite für neu gescannte Bilder */
 const DEFAULT_SCAN_IMPORT_W = 12
 
@@ -105,6 +114,11 @@ let saveStatusTimer
 const captionEditingId = ref(null)
 const captionDraft = ref('')
 const captionModalTextareaRef = ref(null)
+
+/** Lightbox-Reihenfolge: direkte Zahleneingabe */
+const orderEditingId = ref(null)
+const orderDraft = ref('')
+const orderInputRef = ref(null)
 
 const captionModalItem = computed(() => {
   const id = captionEditingId.value
@@ -191,7 +205,9 @@ async function syncFolderToLayout({ statusPrefix = '', keepStatus = false } = {}
     const src = `${imagesBasePathForLayoutConfig(props.configPath)}${name}`
     if (existingSrc.has(src)) continue
     const id = makeId(name)
-    const { naturalWidth: nw, naturalHeight: nh } = await probeImageNatural(src)
+    const { naturalWidth: nw, naturalHeight: nh } = await probeImageNatural(
+      toProxySrc(src),
+    )
     imageMetaById[id] = { naturalWidth: nw, naturalHeight: nh }
     const w = Math.max(1, Math.round(Math.min(DEFAULT_SCAN_IMPORT_W, GRID_COL_NUM)))
     const rh = squareRowHeightPx(cw)
@@ -494,9 +510,66 @@ function onMoveLayoutLater(item) {
   swapLayoutWithNeighbor(item, 1)
 }
 
+function setLayoutOrder(item, newOrderOneBased) {
+  const from = layoutIndexForItem(item)
+  if (from === -1) return
+  const n = layout.value.length
+  if (n === 0) return
+  let to = Math.round(Number(newOrderOneBased))
+  if (!Number.isFinite(to)) return
+  to = Math.max(1, Math.min(n, to)) - 1
+  if (to === from) return
+  const arr = layout.value
+  const [removed] = arr.splice(from, 1)
+  arr.splice(to, 0, removed)
+  syncGridLayoutMirror()
+}
+
+function startOrderEdit(item) {
+  const id = item?.i
+  if (!id) return
+  orderEditingId.value = id
+  orderDraft.value = layoutOrderLabel(item)
+  nextTick(() => {
+    const el = orderInputRef.value
+    el?.focus()
+    el?.select()
+  })
+}
+
+function cancelOrderEdit() {
+  orderEditingId.value = null
+  orderDraft.value = ''
+}
+
+function commitOrderEdit(item) {
+  if (orderEditingId.value !== item?.i) return
+  const raw = String(orderDraft.value).trim()
+  const num = parseInt(raw, 10)
+  if (!raw || !Number.isFinite(num)) {
+    cancelOrderEdit()
+    return
+  }
+  setLayoutOrder(item, num)
+  cancelOrderEdit()
+}
+
+function onOrderInputKeydown(item, e) {
+  if (e.key === 'Enter') {
+    e.preventDefault()
+    commitOrderEdit(item)
+    return
+  }
+  if (e.key === 'Escape') {
+    e.preventDefault()
+    cancelOrderEdit()
+  }
+}
+
 function openCaptionEditor(item) {
   const id = item?.i
   if (!id) return
+  cancelOrderEdit()
   captionEditingId.value = id
   const cur = layout.value.find((it) => it.i === id)
   captionDraft.value = cur?.caption ? String(cur.caption) : ''
@@ -578,8 +651,9 @@ function loadImageNatural(item) {
         naturalHeight: img.naturalHeight,
       })
     }
-    img.onerror = () => reject(new Error(`load failed: ${item.src}`))
-    img.src = item.src
+    const proxySrc = toProxySrc(item.src)
+    img.onerror = () => reject(new Error(`load failed: ${proxySrc}`))
+    img.src = proxySrc
   })
 }
 
@@ -674,11 +748,13 @@ function onGridSurfaceClick(e) {
   const t = e.target
   if (t?.classList?.contains('vue-grid-layout')) {
     cancelCaptionEdit()
+    cancelOrderEdit()
     clearSelection()
     return
   }
   if (t === gridHostRef.value) {
     cancelCaptionEdit()
+    cancelOrderEdit()
     clearSelection()
   }
 }
@@ -810,10 +886,10 @@ async function onResetAspect(item) {
       <template v-else>
       <div
         ref="gridHostRef"
-        class="w-full px-[10%]"
+        class="editor-grid-host w-full px-[10%]"
         @click="onGridSurfaceClick"
       >
-        <div class="min-h-[min(70vh,800px)]">
+        <div class="editor-grid-bounds relative min-h-[min(70vh,800px)]">
         <GridLayout
           ref="gridRef"
           :layout="gridLayoutMirror"
@@ -824,7 +900,7 @@ async function onResetAspect(item) {
           :is-draggable="true"
           :is-resizable="true"
           :vertical-compact="false"
-          :prevent-collision="false"
+          :prevent-collision="true"
           :use-css-transforms="true"
           class="gallery-grid min-h-[min(70vh,800px)]"
           @layout-ready="onLayoutReady"
@@ -849,9 +925,10 @@ async function onResetAspect(item) {
             >
               <div class="relative min-h-0 flex-1 overflow-hidden">
                 <img
-                  :src="item.src"
+                  :src="toProxySrc(item.src)"
                   :alt="item.i"
                   class="h-full w-full object-cover"
+                  decoding="async"
                 />
               </div>
               <div
@@ -870,10 +947,34 @@ async function onResetAspect(item) {
                 >
                   −
                 </button>
-                <span
-                  class="pointer-events-none min-w-[1.75rem] px-0.5 text-center text-sm font-bold tabular-nums text-yellow-400"
-                  :title="`Lightbox-Position ${layoutOrderLabel(item)} von ${layout.length}`"
-                >{{ layoutOrderLabel(item) }}</span>
+                <button
+                  v-if="orderEditingId !== item.i"
+                  type="button"
+                  class="editor-order-label pointer-events-auto min-w-[1.75rem] cursor-text rounded px-0.5 text-center text-sm font-bold tabular-nums text-yellow-400 hover:bg-slate-800/80 hover:text-yellow-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+                  :title="`Lightbox-Position ${layoutOrderLabel(item)} von ${layout.length} — Klicken zum Bearbeiten`"
+                  :aria-label="`Lightbox-Position ${layoutOrderLabel(item)} von ${layout.length}, Zahl eingeben`"
+                  @pointerdown.stop
+                  @mousedown.stop
+                  @click.stop="startOrderEdit(item)"
+                >
+                  {{ layoutOrderLabel(item) }}
+                </button>
+                <input
+                  v-else
+                  ref="orderInputRef"
+                  type="number"
+                  :min="1"
+                  :max="layout.length"
+                  inputmode="numeric"
+                  class="editor-order-input pointer-events-auto"
+                  :aria-label="`Neue Lightbox-Position für ${item.i}`"
+                  v-model="orderDraft"
+                  @keydown="onOrderInputKeydown(item, $event)"
+                  @blur="commitOrderEdit(item)"
+                  @click.stop
+                  @pointerdown.stop
+                  @mousedown.stop
+                />
                 <button
                   type="button"
                   class="editor-order-btn pointer-events-auto flex h-7 w-7 items-center justify-center rounded text-base font-bold leading-none text-slate-100 opacity-0 transition-opacity hover:bg-slate-700 hover:text-white focus:opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 group-hover:opacity-100 disabled:pointer-events-none disabled:opacity-0"
@@ -1010,6 +1111,56 @@ async function onResetAspect(item) {
 </template>
 
 <style scoped>
+/* Nutzbarer Grid-Bereich: linke/rechte Kante (entspricht px-[10%]-Innenfläche) */
+.editor-grid-bounds::before,
+.editor-grid-bounds::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: #262626;
+  box-shadow: 0 0 0 1px rgb(34 211 238 / 0.06);
+  pointer-events: none;
+  z-index: 5;
+}
+
+.editor-grid-bounds::before {
+  left: 0;
+}
+
+.editor-grid-bounds::after {
+  right: 0;
+}
+
+.editor-order-input {
+  width: 2.75rem;
+  height: 1.75rem;
+  border-radius: 0.25rem;
+  border: 1px solid rgb(250 204 21 / 0.45);
+  background: rgb(15 23 42 / 0.95);
+  padding: 0 0.25rem;
+  text-align: center;
+  font-size: 0.875rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: rgb(250 204 21);
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.editor-order-input:focus {
+  outline: none;
+  border-color: rgb(250 204 21 / 0.75);
+  box-shadow: 0 0 0 2px rgb(52 211 153 / 0.35);
+}
+
+.editor-order-input::-webkit-outer-spin-button,
+.editor-order-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
 .gallery-grid :deep(.vue-grid-layout) {
   min-height: 200px;
 }
