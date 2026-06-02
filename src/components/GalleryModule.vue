@@ -137,11 +137,11 @@ const LB_PORTRAIT_INSET_BOTTOM = 104
  * Vertikal brauchen wir daher nur einen schmalen Sicherheitsabstand zum
  * Displayrand (URL-Leiste über dvh abgedeckt). Stattdessen reservieren wir
  * links/rechts so viel Breite, dass der Rahmen an die Icons stößt, aber sie
- * nicht überdeckt (Icon 40px + 2×6px Padding ≈ 52px + Rand + kleiner Spalt).
+ * nicht überdeckt (Pfeil-Icon 80px + 2×6px Padding ≈ 92px + Rand + kleiner Spalt).
  */
 const LB_LANDSCAPE_INSET_TOP = 12
 const LB_LANDSCAPE_INSET_BOTTOM = 12
-const LB_LANDSCAPE_INSET_SIDE = 64
+const LB_LANDSCAPE_INSET_SIDE = 104
 
 function lbInsets() {
   if (isMobileLandscape.value) {
@@ -1477,6 +1477,7 @@ onBeforeUnmount(() => {
               @click.stop="prevImage"
             >
               <img
+                class="lb-mnav-arrow-img"
                 :src="iconUrl('left.png')"
                 alt=""
                 draggable="false"
@@ -1505,6 +1506,7 @@ onBeforeUnmount(() => {
               @click.stop="nextImage"
             >
               <img
+                class="lb-mnav-arrow-img"
                 :src="iconUrl('right.png')"
                 alt=""
                 draggable="false"
@@ -1552,6 +1554,7 @@ onBeforeUnmount(() => {
               @click.stop="prevImage"
             >
               <img
+                class="lb-mnav-arrow-img"
                 :src="iconUrl('left.png')"
                 alt=""
                 draggable="false"
@@ -1566,6 +1569,7 @@ onBeforeUnmount(() => {
               @click.stop="nextImage"
             >
               <img
+                class="lb-mnav-arrow-img"
                 :src="iconUrl('right.png')"
                 alt=""
                 draggable="false"
@@ -1916,11 +1920,11 @@ onBeforeUnmount(() => {
 
 /*
  * Mobil-Landscape: Buttons sitzen in den Ecken → vertikal nur schmaler
- * Sicherheitsabstand (12px), seitlich 64px Reserve für die Icons. Werte müssen
+ * Sicherheitsabstand (12px), seitlich 104px Reserve für die großen Pfeil-Icons. Werte müssen
  * exakt LB_LANDSCAPE_INSET_TOP/BOTTOM/SIDE entsprechen. dvh deckt die URL-Leiste ab.
  */
 .lb-overlay--landscape {
-  padding: 12px 64px;
+  padding: 12px 104px;
 }
 
 .lb-overlay--landscape .lb-fade-stage {
@@ -1953,6 +1957,11 @@ onBeforeUnmount(() => {
   object-fit: contain;
   user-select: none;
   -webkit-user-drag: none;
+}
+
+.lb-mnav-btn .lb-mnav-arrow-img {
+  width: 80px;
+  height: 80px;
 }
 
 .lb-mnav-btn:active img {

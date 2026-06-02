@@ -180,7 +180,7 @@
       "w": 9,
       "h": 6,
       "src": "./images/gallery2/michel3_20170223_231041.webp",
-      "caption": "Stich, Stabilisation, Rig Removal, Color Correction in 360, in a single run using Nuke."
+      "caption": "Stich, Stabilisation, Rig Removal, Color Correction . All in a single run, using Nuke."
     },
     {
       "i": "michelin_8koutside_2.1.1",
@@ -204,7 +204,8 @@
       "y": 45,
       "w": 10,
       "h": 6,
-      "src": "./images/gallery2/bayer3_DSC04058.webp"
+      "src": "./images/gallery2/bayer3_DSC04058.webp",
+      "caption": "Bayer Femcare Commercial Production"
     },
     {
       "i": "bayervlcsnap-2026-05-05-17h12m22s980",
@@ -236,7 +237,8 @@
       "y": 51,
       "w": 10,
       "h": 6,
-      "src": "./images/gallery2/bayer3_DSC04045.webp"
+      "src": "./images/gallery2/bayer3_DSC04045.webp",
+      "caption": "Backstage Monitoring Suite with live panoramic & undwrapped view as well as VR Headset view"
     },
     {
       "i": "euro3_Screenshot 2026-03-13 13.37.41",
@@ -244,7 +246,8 @@
       "y": 50,
       "w": 17,
       "h": 7,
-      "src": "./images/gallery2/euro3_Screenshot 2026-03-13 13.37.41.webp"
+      "src": "./images/gallery2/euro3_Screenshot 2026-03-13 13.37.41.webp",
+      "caption": "Galeries Lafayette Haussmann Paris / Fashion Space Experience"
     },
     {
       "i": "voiceIMG_4099_ups",
@@ -260,7 +263,8 @@
       "y": 57,
       "w": 12,
       "h": 7,
-      "src": "./images/gallery2/voice_vlcsnap-2026-05-12-21h26m09s936_rend1.webp"
+      "src": "./images/gallery2/voice_vlcsnap-2026-05-12-21h26m09s936_rend1.webp",
+      "caption": "Pro7 – The Voice of Germany / Full show coverage from the qualifiers through to the finals, on stage and behind the scenes."
     },
     {
       "i": "voice3_The+Voice+of+Germany+Blind+Auditions+VR3",
@@ -284,7 +288,8 @@
       "y": 64,
       "w": 9,
       "h": 13,
-      "src": "./images/gallery2/voice3_DSC00652.webp"
+      "src": "./images/gallery2/voice3_DSC00652.webp",
+      "caption": "TVOG - finals in 360 live stream"
     },
     {
       "i": "voice_vlcsnap-2026-05-05-17h17m57s684_2",
@@ -292,7 +297,8 @@
       "y": 66,
       "w": 13,
       "h": 5,
-      "src": "./images/gallery2/voice_vlcsnap-2026-05-05-17h17m57s684_2.webp"
+      "src": "./images/gallery2/voice_vlcsnap-2026-05-05-17h17m57s684_2.webp",
+      "caption": "full testrun with all lights and sound, only the talent and the camera"
     },
     {
       "i": "s_20151122_134816",
@@ -300,7 +306,8 @@
       "y": 59,
       "w": 9,
       "h": 5,
-      "src": "./images/gallery2/s_20151122_134816.webp"
+      "src": "./images/gallery2/s_20151122_134816.webp",
+      "caption": "Serious extension cord.   (400V / 63A / 43500 Watts) ... let's call it Chuck."
     },
     {
       "i": "voice3_Screenshot_2015-09-02-17-55-16",
@@ -335,6 +342,15 @@
       "src": "./images/gallery2/voice3_20151216_164840.webp"
     },
     {
+      "i": "brotherScreenshot 2026-05-04 22.21.17",
+      "x": 1,
+      "y": 79,
+      "w": 12,
+      "h": 5,
+      "src": "./images/gallery2/brotherScreenshot 2026-05-04 22.21.17.webp",
+      "caption": "Endemol Shine – Big Brother / Halloween special with multiple 360° live views"
+    },
+    {
       "i": "brothervlcsnap-2026-05-05-16h53m36s301",
       "x": 0,
       "y": 72,
@@ -343,20 +359,13 @@
       "src": "./images/gallery2/brothervlcsnap-2026-05-05-16h53m36s301.webp"
     },
     {
-      "i": "brotherScreenshot 2026-05-04 22.21.17",
-      "x": 1,
-      "y": 79,
-      "w": 12,
-      "h": 5,
-      "src": "./images/gallery2/brotherScreenshot 2026-05-04 22.21.17.webp"
-    },
-    {
       "i": "coke_Screenshot 2026-05-09 00.59.29",
       "x": 25,
       "y": 77,
       "w": 12,
       "h": 6,
-      "src": "./images/gallery2/coke_Screenshot 2026-05-09 00.59.29.webp"
+      "src": "./images/gallery2/coke_Screenshot 2026-05-09 00.59.29.webp",
+      "caption": "Coke TV / Winter Event on a glacier, with Dner & Izzy"
     },
     {
       "i": "coke_raupe8k1",
@@ -364,7 +373,8 @@
       "y": 83,
       "w": 12,
       "h": 6,
-      "src": "./images/gallery2/coke_raupe8k1.webp"
+      "src": "./images/gallery2/coke_raupe8k1.webp",
+      "caption": "It was -20°C (-4°F), but thanks to the heating systems, the cameras worked perfectly throughout the entire day of shooting."
     },
     {
       "i": "coke20161103_113145",
@@ -388,7 +398,8 @@
       "y": 84,
       "w": 11,
       "h": 8,
-      "src": "./images/gallery2/depart3_20160626-Promo-Stand-T3-Triathlon-0180-2-1-ups-upscale.webp"
+      "src": "./images/gallery2/depart3_20160626-Promo-Stand-T3-Triathlon-0180-2-1-ups-upscale.webp",
+      "caption": "The Grand Départ Düsseldorf 2017 – Tour de France. VR booth featuring scenic 360° bike tours through the city."
     },
     {
       "i": "departvlcsnap-2026-05-05-17h16m38s812",
@@ -404,7 +415,8 @@
       "y": 89,
       "w": 12,
       "h": 8,
-      "src": "./images/gallery2/bertelsmann3_DSC06479_klein.webp"
+      "src": "./images/gallery2/bertelsmann3_DSC06479_klein.webp",
+      "caption": "Bertelsmann Press Conference - 360 Live Stream"
     },
     {
       "i": "bertelsmann3_DSC06496",
@@ -436,7 +448,8 @@
       "y": 97,
       "w": 9,
       "h": 6,
-      "src": "./images/gallery2/ferragamo20170216_131750.webp"
+      "src": "./images/gallery2/ferragamo20170216_131750.webp",
+      "caption": "Salvatore Ferragamo – Immersive brand experience showcase in Florence"
     },
     {
       "i": "ferragamo20170216_095832_ups",
@@ -468,7 +481,8 @@
       "y": 103,
       "w": 9,
       "h": 8,
-      "src": "./images/gallery2/afrika3_DSC08767.webp"
+      "src": "./images/gallery2/afrika3_DSC08767.webp",
+      "caption": "At up to 40°C (104°F), the internal cooling system of the camera worked perfectly throughout full days of filming."
     },
     {
       "i": "afikavlcsnap-2026-05-05-16h34m41s567",
@@ -476,7 +490,8 @@
       "y": 105,
       "w": 13,
       "h": 6,
-      "src": "./images/gallery2/afikavlcsnap-2026-05-05-16h34m41s567.webp"
+      "src": "./images/gallery2/afikavlcsnap-2026-05-05-16h34m41s567.webp",
+      "caption": "Kindernothilfe Africa – Capturing daily life and the impact of relief work"
     },
     {
       "i": "afrikavlcsnap-2026-05-05-16h35m11s197",
@@ -484,7 +499,8 @@
       "y": 102,
       "w": 14,
       "h": 6,
-      "src": "./images/gallery2/afrikavlcsnap-2026-05-05-16h35m11s197.webp"
+      "src": "./images/gallery2/afrikavlcsnap-2026-05-05-16h35m11s197.webp",
+      "caption": "Digging and sifting sand for commercial concrete – highlighting the harsh reality of corporate supply chains and limited local livelihoods"
     },
     {
       "i": "afrika3_image1-ups-upscale",
@@ -500,7 +516,8 @@
       "y": 108,
       "w": 7,
       "h": 10,
-      "src": "./images/gallery2/afrika3_DSC_4522.webp"
+      "src": "./images/gallery2/afrika3_DSC_4522.webp",
+      "caption": "SOS Children's Villages Zambia – Providing homes for abandoned children, while also supporting families in local slums"
     },
     {
       "i": "afrika3_SOS+Kinderdorf_2_klein",
@@ -556,7 +573,8 @@
       "y": 125,
       "w": 12,
       "h": 7,
-      "src": "./images/gallery2/lindenberg3_DSC07750.webp"
+      "src": "./images/gallery2/lindenberg3_DSC07750.webp",
+      "caption": "Capturing Udo Lindenberg at a Concert for the Panik City Museum"
     },
     {
       "i": "lindenbergvlcsnap-2026-05-05-16h24m06s561",
@@ -580,7 +598,8 @@
       "y": 129,
       "w": 12,
       "h": 6,
-      "src": "./images/gallery2/lindenberg_mistika1.webp"
+      "src": "./images/gallery2/lindenberg_mistika1.webp",
+      "caption": "Mistika VR – Pretty much the best seam control and great color grading for high-resolution video stitching"
     },
     {
       "i": "lindenberg_stagerender2",
@@ -604,7 +623,8 @@
       "y": 137,
       "w": 12,
       "h": 7,
-      "src": "./images/gallery2/s_DSC07768.webp"
+      "src": "./images/gallery2/s_DSC07768.webp",
+      "caption": "That's German engineering. I love it!"
     },
     {
       "i": "igo3_20190409_174031",
