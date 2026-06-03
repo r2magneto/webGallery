@@ -58,8 +58,8 @@ function syncOrientation() {
 const isMobilePortrait = computed(() => isMobileLayout.value && !isLandscape.value)
 const isMobileLandscape = computed(() => isMobileLayout.value && isLandscape.value)
 
-/** Infotext im Mobil-Landscape standardmäßig aus; per Info-Button einklappbar. */
-const infoVisible = ref(false)
+/** Infotext im Mobil-Landscape standardmäßig an; per Info-Button einklappbar. */
+const infoVisible = ref(true)
 
 function toggleInfo() {
   infoVisible.value = !infoVisible.value
@@ -119,6 +119,7 @@ const LB_CAPTION_GAP = 10
 const LB_FULL_OUTLINE_PX = 1
 const LB_VIEWPORT_W_FRAC = 0.94
 const LB_VIEWPORT_H_FRAC = 0.88
+const LB_MOBILE_EDGE_INSET = 8
 
 /**
  * Vertikale Reserven (px) für die Vollansicht, je nach Modus. Sie definieren das
@@ -126,22 +127,20 @@ const LB_VIEWPORT_H_FRAC = 0.88
  * Overlay übereinstimmen (siehe `.lb-overlay--portrait` / `--landscape`).
  *
  * - Desktop: symmetrisch aus LB_VIEWPORT_H_FRAC → ~88 % nutzbar.
- * - Mobil-Portrait: unten Platz für die Icon-Reihe (left/close/right).
- * - Mobil-Landscape: oben Info/Close, unten Prev/Next → verhindert zugleich das
- *   Abschneiden, weil der Rahmen garantiert in (100dvh − Reserven) passt.
+ * - Mobil: nur ein kleiner Displayrand; Icons liegen als Overlay über dem Bild,
+ *   damit die Vollansicht die Bildschirmfläche maximal nutzen kann.
  */
-const LB_PORTRAIT_INSET_TOP = 8
-const LB_PORTRAIT_INSET_BOTTOM = 104
-/*
- * Landscape: Buttons liegen in den ECKEN, nicht in einem oben/unten-Band.
- * Vertikal brauchen wir daher nur einen schmalen Sicherheitsabstand zum
- * Displayrand (URL-Leiste über dvh abgedeckt). Stattdessen reservieren wir
- * links/rechts so viel Breite, dass der Rahmen an die Icons stößt, aber sie
- * nicht überdeckt (Pfeil-Icon 80px + 2×6px Padding ≈ 92px + Rand + kleiner Spalt).
- */
+const LB_PORTRAIT_INSET_TOP = LB_MOBILE_EDGE_INSET
+const LB_PORTRAIT_INSET_BOTTOM = LB_MOBILE_EDGE_INSET
+const LB_PORTRAIT_INSET_SIDE = 12
 const LB_LANDSCAPE_INSET_TOP = 12
 const LB_LANDSCAPE_INSET_BOTTOM = 12
-const LB_LANDSCAPE_INSET_SIDE = 104
+const LB_LANDSCAPE_INSET_SIDE = 12
+
+const infoIconName = computed(() =>
+  infoVisible.value ? 'infoon.png' : 'infooff.png',
+)
+const infoIconSrc = computed(() => iconUrl(infoIconName.value))
 
 function lbInsets() {
   if (isMobileLandscape.value) {
@@ -153,15 +152,11 @@ function lbInsets() {
     }
   }
   if (isMobilePortrait.value) {
-    const sx =
-      typeof window !== 'undefined'
-        ? (window.innerWidth * (1 - LB_VIEWPORT_W_FRAC)) / 2
-        : 0
     return {
       top: LB_PORTRAIT_INSET_TOP,
       bottom: LB_PORTRAIT_INSET_BOTTOM,
-      left: sx,
-      right: sx,
+      left: LB_PORTRAIT_INSET_SIDE,
+      right: LB_PORTRAIT_INSET_SIDE,
     }
   }
   const my =
@@ -697,7 +692,7 @@ const lbFrameStyle = computed(() => {
   return {
     width: `${L.frameW}px`,
     height: `${L.frameH}px`,
-    maxWidth: 'min(95vw, 100%)',
+    maxWidth: isMobileLayout.value ? '100%' : 'min(95vw, 100%)',
     maxHeight: '100%',
     boxSizing: 'border-box',
   }
@@ -724,7 +719,7 @@ function openLightbox(index, event) {
   clearCaptionFadeBeforeCloseTimer()
   lbCaptionFastHide.value = false
   clearLbAspectLock()
-  infoVisible.value = false
+  infoVisible.value = true
   isHighResLoaded.value = false
   morphShellOpacity.value = 1
   lbBackdropOpacity.value = 1
@@ -1526,7 +1521,8 @@ onBeforeUnmount(() => {
               @click.stop="toggleInfo"
             >
               <img
-                :src="iconUrl(infoVisible ? 'infoon.png' : 'infooff.png')"
+                :key="infoIconName"
+                :src="infoIconSrc"
                 alt=""
                 draggable="false"
                 decoding="sync"
@@ -1908,23 +1904,22 @@ onBeforeUnmount(() => {
   width: 100%;
 }
 
-/* Mobil-Portrait: unten Band für die Icon-Reihe (left/close/right). */
+/* Mobil-Portrait: Icons liegen über dem Bild, daher nur ein kleiner Displayrand. */
 .lb-overlay--portrait {
-  padding: 8px 12px 104px;
+  padding: 8px 12px;
 }
 
 .lb-overlay--portrait .lb-fade-stage {
-  height: calc(100dvh - 8px - 104px);
-  max-height: calc(100dvh - 8px - 104px);
+  height: calc(100dvh - 8px - 8px);
+  max-height: calc(100dvh - 8px - 8px);
 }
 
 /*
- * Mobil-Landscape: Buttons sitzen in den Ecken → vertikal nur schmaler
- * Sicherheitsabstand (12px), seitlich 104px Reserve für die großen Pfeil-Icons. Werte müssen
- * exakt LB_LANDSCAPE_INSET_TOP/BOTTOM/SIDE entsprechen. dvh deckt die URL-Leiste ab.
+ * Mobil-Landscape: Buttons sitzen in den Ecken als Overlay. Die Bühne reserviert
+ * keinen Platz für die Icons, damit breite Bilder die Screenfläche nutzen.
  */
 .lb-overlay--landscape {
-  padding: 12px 104px;
+  padding: 12px;
 }
 
 .lb-overlay--landscape .lb-fade-stage {
@@ -1952,16 +1947,17 @@ onBeforeUnmount(() => {
 
 .lb-mnav-btn img {
   display: block;
-  width: 40px;
-  height: 40px;
+  width: clamp(64px, 15vw, 96px);
+  aspect-ratio: 2 / 1;
+  height: auto;
   object-fit: contain;
   user-select: none;
   -webkit-user-drag: none;
 }
 
 .lb-mnav-btn .lb-mnav-arrow-img {
-  width: 80px;
-  height: 80px;
+  width: clamp(88px, 20vw, 128px);
+  height: auto;
 }
 
 .lb-mnav-btn:active img {
@@ -1975,11 +1971,11 @@ onBeforeUnmount(() => {
   right: 0;
   bottom: 0;
   z-index: 45;
-  height: 104px;
+  height: 72px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 40px;
+  gap: clamp(18px, 8vw, 40px);
   pointer-events: none;
 }
 
@@ -1988,6 +1984,12 @@ onBeforeUnmount(() => {
 }
 
 /* Landscape: Ecken. */
+.lb-overlay--landscape .lb-mnav-btn img,
+.lb-overlay--landscape .lb-mnav-btn .lb-mnav-arrow-img {
+  width: 80px;
+  height: auto;
+}
+
 .lb-mnav--ls-info {
   top: 6px;
   left: 8px;
@@ -2000,11 +2002,11 @@ onBeforeUnmount(() => {
 
 .lb-mnav--ls-prev {
   bottom: 8px;
-  left: 10px;
+  left: 8px;
 }
 
 .lb-mnav--ls-next {
   bottom: 8px;
-  right: 10px;
+  right: 8px;
 }
 </style>
