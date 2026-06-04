@@ -58,6 +58,8 @@ function syncOrientation() {
 const isMobilePortrait = computed(() => isMobileLayout.value && !isLandscape.value)
 const isMobileLandscape = computed(() => isMobileLayout.value && isLandscape.value)
 
+const gridMargin = computed(() => (isMobileLayout.value ? [5, 5] : [10, 10]))
+
 /** Infotext im Mobil-Landscape standardmäßig an; per Info-Button einklappbar. */
 const infoVisible = ref(true)
 
@@ -192,7 +194,7 @@ const gridHostRef = ref(null)
 const gridHostWidth = ref(0)
 
 const gridRowHeight = computed(() =>
-  squareRowHeightPx(gridHostWidth.value || 960),
+  squareRowHeightPx(gridHostWidth.value || 960, gridMargin.value[0]),
 )
 
 /**
@@ -248,6 +250,7 @@ function tileMediaStyle(item) {
     item,
     gridHostWidth.value || 960,
     gridRowHeight.value,
+    gridMargin.value,
   )
 }
 
@@ -964,8 +967,6 @@ function nextImage() {
   if (n === 0 || lightboxIndex.value === null) return
   lightboxIndex.value = (lightboxIndex.value + 1) % n
 }
-
-const gridMargin = computed(() => (isMobileLayout.value ? [5, 5] : [10, 10]))
 
 function onLightboxKeydown(e) {
   if (lightboxIndex.value === null) return
