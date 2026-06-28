@@ -4,7 +4,9 @@ import { ROW_SIZE, hexToRgb, normalizePalette, rgbToHex } from '../utils/ansiPal
 
 const props = defineProps({
   title: { type: String, required: true },
-  ansiFileName: { type: String, required: true },
+  assetFileName: { type: String, default: '' },
+  /** @deprecated Use assetFileName */
+  ansiFileName: { type: String, default: '' },
   loadConfig: { type: Function, required: true },
   saveConfig: { type: Function, required: true },
   loadProjectConfig: { type: Function, required: true },
@@ -13,7 +15,11 @@ const props = defineProps({
   projectMissingMessage: { type: String, required: true },
 })
 
-const ANSI_URL = `${import.meta.env.BASE_URL || '/'}${props.ansiFileName}`
+const resolvedFileName = computed(() => props.assetFileName || props.ansiFileName)
+
+const assetUrl = computed(
+  () => `${import.meta.env.BASE_URL || '/'}${resolvedFileName.value}`,
+)
 
 const rawText = ref('')
 const lines = computed(() => String(rawText.value || '').replace(/\r\n/g, '\n').split('\n'))
@@ -180,10 +186,27 @@ watch(
   { deep: true },
 )
 
+async function loadAssetText() {
+  if (!resolvedFileName.value) return
+  const res = await fetch(assetUrl.value)
+  if (!res.ok) {
+    loadError.value = `${resolvedFileName.value} konnte nicht geladen werden (${res.status}).`
+    rawText.value = ''
+    return
+  }
+  loadError.value = ''
+  rawText.value = (await res.text()).replace(/\r\n/g, '\n').trimEnd()
+}
+
+watch(resolvedFileName, () => {
+  cfg.value = props.loadConfig()
+  ensurePalette()
+  loadAssetText()
+})
+
 onMounted(async () => {
   ensurePalette()
-  const res = await fetch(ANSI_URL)
-  rawText.value = await res.text()
+  await loadAssetText()
   window.addEventListener('pointerup', onPointerUp, true)
   window.addEventListener('pointercancel', onPointerUp, true)
 })
@@ -315,6 +338,9 @@ onBeforeUnmount(() => {
       </p>
       <p v-if="loadError" class="header-editor-error" role="status">
         {{ loadError }}
+      </p>
+      <p v-if="resolvedFileName" class="header-editor-file">
+        Datei: <code>{{ resolvedFileName }}</code>
       </p>
     </div>
 
@@ -517,6 +543,17 @@ onBeforeUnmount(() => {
   margin: 8px 0 0;
   font-size: 12px;
   color: rgb(248 113 113);
+}
+
+.header-editor-file {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: rgb(148 163 184);
+}
+
+.header-editor-file code {
+  font-family: ui-monospace, monospace;
+  color: rgb(226 232 240);
 }
 
 .header-editor-canvas {

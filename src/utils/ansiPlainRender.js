@@ -23,9 +23,14 @@ export function segLineFromCharStyles(chars, styles) {
 }
 
 /** Monochrome default + per-cell paint from color config (same model as header). */
-export function buildPlainAnsiLines(text, cfg) {
-  const clean = String(text || '').replace(/\r\n/g, '\n')
+export function buildPlainAnsiLines(text, cfg, options = {}) {
+  const defaultFgIdx = options.defaultFgIdx ?? 8
+  const maxLines = options.maxLines ?? null
+  const clean = String(text || '').replace(/\r\n/g, '\n').trimEnd()
   const baseLines = clean.split('\n')
+  while (baseLines.length > 0 && baseLines[baseLines.length - 1] === '') {
+    baseLines.pop()
+  }
   const out = []
 
   for (let li = 0; li < baseLines.length; li += 1) {
@@ -39,7 +44,7 @@ export function buildPlainAnsiLines(text, cfg) {
     }))
 
     for (let i = 0; i < chars.length; i += 1) {
-      if (chars[i] !== ' ' && styles[i].fgIdx == null) styles[i].fgIdx = 8
+      if (chars[i] !== ' ' && styles[i].fgIdx == null) styles[i].fgIdx = defaultFgIdx
     }
 
     if (cfg?.cells?.[li]) {
@@ -59,6 +64,10 @@ export function buildPlainAnsiLines(text, cfg) {
     }
 
     out.push(segLineFromCharStyles(chars, styles))
+  }
+
+  if (maxLines != null && maxLines > 0) {
+    return out.slice(0, maxLines)
   }
   return out
 }
