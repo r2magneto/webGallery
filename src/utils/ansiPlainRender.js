@@ -1,3 +1,25 @@
+/** Keep trailing spaces (full-line background paint); drop trailing newlines only. */
+export function normalizePlainAnsiText(text) {
+  return String(text ?? '').replace(/\r\n/g, '\n').replace(/\n+$/, '')
+}
+
+/** Center each line in `width` character cells so background paint can span the full row. */
+export function centerPadPlainLines(text, width) {
+  const clean = normalizePlainAnsiText(text)
+  const w = Number(width) || 0
+  if (w < 1) return clean
+  return clean
+    .split('\n')
+    .map((line) => {
+      const core = line.trim()
+      if (core.length >= w) return core
+      const pad = w - core.length
+      const left = Math.floor(pad / 2)
+      return `${' '.repeat(left)}${core}${' '.repeat(pad - left)}`
+    })
+    .join('\n')
+}
+
 export function segLineFromCharStyles(chars, styles) {
   const segs = []
   let cur = null
@@ -26,7 +48,7 @@ export function segLineFromCharStyles(chars, styles) {
 export function buildPlainAnsiLines(text, cfg, options = {}) {
   const defaultFgIdx = options.defaultFgIdx ?? 8
   const maxLines = options.maxLines ?? null
-  const clean = String(text || '').replace(/\r\n/g, '\n').trimEnd()
+  const clean = normalizePlainAnsiText(text)
   const baseLines = clean.split('\n')
   while (baseLines.length > 0 && baseLines[baseLines.length - 1] === '') {
     baseLines.pop()

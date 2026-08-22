@@ -13,8 +13,9 @@ import {
 const LAYOUT_ASSETS = [
   { file: 'header_01_01_BW.txt', label: 'Header Logo 1' },
   { file: 'header_02_01_BW.txt', label: 'Header Logo 2' },
+  { file: 'header_03_01_BW.txt', label: 'Header Logo 3' },
   { file: 'notebox.txt', label: 'Notebox' },
-  { file: 'buttontitle.txt', label: 'Button-Titel' },
+  { file: 'buttontitlebar.txt', label: 'Button-Titel', minLineWidth: 76 },
   { file: 'btn_mocap.txt', label: 'Button: Motion Capture' },
   { file: 'btn_360cap.txt', label: 'Button: 360 Video' },
   { file: 'btn_reference.txt', label: 'Button: References' },
@@ -75,6 +76,7 @@ function downloadConfig(cfg) {
       :import-config="importHeaderColorConfig"
       :download-config="downloadConfig"
       :project-missing-message="projectMissingMessage"
+      :min-line-width="selectedAsset.minLineWidth || 0"
     />
   </div>
 </template>

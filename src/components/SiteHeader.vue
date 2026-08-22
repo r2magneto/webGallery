@@ -1,16 +1,22 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue'
-import { buildPlainAnsiLines } from '../utils/ansiPlainRender.js'
+import { computed, onMounted, reactive, ref } from 'vue'
+import { buildPlainAnsiLines, centerPadPlainLines, normalizePlainAnsiText } from '../utils/ansiPlainRender.js'
 import {
   defaultHeaderColorConfig,
   loadDisplayAssetColorConfig,
   resolvePalette,
 } from '../utils/headerColorConfig.js'
 
-const AVAILABLE_HEADERS = ['header_01_01_BW.txt', 'header_02_01_BW.txt']
+const AVAILABLE_HEADERS = [
+  'header_01_01_BW.txt',
+  'header_02_01_BW.txt',
+  'header_03_01_BW.txt',
+]
 
 const NOTEBOX_FILE = 'notebox.txt'
-const BUTTONTITLE_FILE = 'buttontitle.txt'
+const BUTTONTITLE_FILE = 'buttontitlebar.txt'
+/** 3×24-Zeichen-Buttons + 2 Lücken à 2 Zeichen — volle färbbare Titelzeile */
+const BUTTONTITLE_WIDTH = 24 * 3 + 2 * 2
 
 const EDITOR_LINK_TEXT = 'MALTE MAAS'
 
@@ -21,6 +27,15 @@ const NAV_BUTTONS = [
 ]
 
 const currentHeaderFile = ref(AVAILABLE_HEADERS[0])
+
+const headerAssets = reactive(
+  Object.fromEntries(
+    AVAILABLE_HEADERS.map((file) => [
+      file,
+      { text: '', colors: defaultHeaderColorConfig() },
+    ]),
+  ),
+)
 
 const props = defineProps({
   galleryTab: { type: String, required: true },
@@ -33,14 +48,16 @@ function isActiveNav(tabKey) {
   return !props.isEditMode && props.galleryTab === tabKey
 }
 
-const rawHeaderText = ref('')
+const rawHeaderText = computed(() => headerAssets[currentHeaderFile.value]?.text ?? '')
 const rawNoteboxText = ref('')
 const rawButtontitleText = ref('')
 const rawBtnMocapText = ref('')
 const rawBtn360capText = ref('')
 const rawBtnReferenceText = ref('')
 
-const headerColorCfg = ref(defaultHeaderColorConfig())
+const headerColorCfg = computed(
+  () => headerAssets[currentHeaderFile.value]?.colors ?? defaultHeaderColorConfig(),
+)
 const noteboxColorCfg = ref(defaultHeaderColorConfig())
 const buttontitleColorCfg = ref(defaultHeaderColorConfig())
 const btnMocapColorCfg = ref(defaultHeaderColorConfig())
@@ -81,26 +98,67 @@ const buttonLines = computed(() => {
   return out
 })
 
-function expandHeaderLineParts(ln) {
-  const parts = []
-  for (const seg of ln.segments) {
-    const text = seg.text
-    let idx = 0
-    while (idx < text.length) {
-      const hit = text.indexOf(EDITOR_LINK_TEXT, idx)
-      if (hit === -1) {
-        if (idx < text.length) {
-          parts.push({ seg: { ...seg, text: text.slice(idx) }, role: null })
-        }
-        break
-      }
-      if (hit > idx) {
-        parts.push({ seg: { ...seg, text: text.slice(idx, hit) }, role: null })
-      }
-      parts.push({ seg: { ...seg, text: EDITOR_LINK_TEXT }, role: 'editor-link' })
-      idx = hit + EDITOR_LINK_TEXT.length
+function charCellsFromSegments(segments) {
+  const chars = []
+  for (const seg of segments ?? []) {
+    for (const ch of [...(seg.text ?? '')]) {
+      chars.push({
+        ch,
+        fgIdx: seg.fgIdx ?? null,
+        bgIdx: seg.bgIdx ?? null,
+        hue: Boolean(seg.hue),
+        bright: Boolean(seg.bright),
+      })
     }
   }
+  return chars
+}
+
+function groupStyledRange(chars, start, end) {
+  const segs = []
+  let cur = null
+  for (let i = start; i < end; i += 1) {
+    const c = chars[i]
+    const key = `${c.fgIdx}|${c.bgIdx}|${Number(c.hue)}|${Number(c.bright)}`
+    if (!cur || cur._key !== key) {
+      cur = {
+        _key: key,
+        text: c.ch,
+        fgIdx: c.fgIdx,
+        bgIdx: c.bgIdx,
+        hue: c.hue,
+        bright: c.bright,
+      }
+      segs.push(cur)
+    } else {
+      cur.text += c.ch
+    }
+  }
+  for (const s of segs) delete s._key
+  return segs
+}
+
+function expandHeaderLineParts(ln) {
+  const chars = charCellsFromSegments(ln.segments)
+  const fullText = chars.map((c) => c.ch).join('')
+  const hit = fullText.indexOf(EDITOR_LINK_TEXT)
+  const parts = []
+
+  function pushPlain(start, end) {
+    for (const seg of groupStyledRange(chars, start, end)) {
+      parts.push({ role: null, segments: [seg] })
+    }
+  }
+
+  if (hit === -1) {
+    pushPlain(0, chars.length)
+    return parts
+  }
+
+  const linkEnd = hit + EDITOR_LINK_TEXT.length
+  pushPlain(0, hit)
+  parts.push({ role: 'editor-link', segments: groupStyledRange(chars, hit, linkEnd) })
+  pushPlain(linkEnd, chars.length)
   return parts
 }
 
@@ -179,8 +237,26 @@ function pickRandomHeader() {
   return AVAILABLE_HEADERS[Math.floor(Math.random() * AVAILABLE_HEADERS.length)]
 }
 
+function onEnterEditor(event) {
+  event?.stopPropagation()
+  event?.preventDefault()
+  emit('enter-editor')
+}
+
+function onHeaderGraphicClick(event) {
+  if (event.target.closest('.ansi-editor-link')) return
+  cycleHeader()
+}
+
+function cycleHeader() {
+  if (AVAILABLE_HEADERS.length < 2) return
+  const idx = AVAILABLE_HEADERS.indexOf(currentHeaderFile.value)
+  currentHeaderFile.value =
+    AVAILABLE_HEADERS[(Math.max(0, idx) + 1) % AVAILABLE_HEADERS.length]
+}
+
 function normalizeLoadedText(text) {
-  return String(text ?? '').replace(/\r\n/g, '\n').trimEnd()
+  return normalizePlainAnsiText(text)
 }
 
 async function fetchTextAsset(fileName) {
@@ -189,13 +265,15 @@ async function fetchTextAsset(fileName) {
   return normalizeLoadedText(await res.text())
 }
 
-async function loadTextAndColors(fileName, textRef, colorRef) {
+async function loadTextAndColors(fileName, textRef, colorRef, options = {}) {
   try {
     const [text, colors] = await Promise.all([
       fetchTextAsset(fileName),
       loadDisplayAssetColorConfig(fileName),
     ])
-    textRef.value = text
+    textRef.value = options.lineWidth
+      ? centerPadPlainLines(text, options.lineWidth)
+      : text
     colorRef.value = colors
   } catch {
     textRef.value = `${fileName} LOAD FAILED`
@@ -203,14 +281,29 @@ async function loadTextAndColors(fileName, textRef, colorRef) {
   }
 }
 
+async function loadHeaderAsset(fileName) {
+  try {
+    const [text, colors] = await Promise.all([
+      fetchTextAsset(fileName),
+      loadDisplayAssetColorConfig(fileName),
+    ])
+    headerAssets[fileName].text = text
+    headerAssets[fileName].colors = colors
+  } catch {
+    headerAssets[fileName].text = `${fileName} LOAD FAILED`
+    headerAssets[fileName].colors = defaultHeaderColorConfig()
+  }
+}
+
 async function loadLayoutAssets() {
-  const headerFile = pickRandomHeader()
-  currentHeaderFile.value = headerFile
+  currentHeaderFile.value = pickRandomHeader()
 
   await Promise.all([
-    loadTextAndColors(headerFile, rawHeaderText, headerColorCfg),
+    ...AVAILABLE_HEADERS.map((file) => loadHeaderAsset(file)),
     loadTextAndColors(NOTEBOX_FILE, rawNoteboxText, noteboxColorCfg),
-    loadTextAndColors(BUTTONTITLE_FILE, rawButtontitleText, buttontitleColorCfg),
+    loadTextAndColors(BUTTONTITLE_FILE, rawButtontitleText, buttontitleColorCfg, {
+      lineWidth: BUTTONTITLE_WIDTH,
+    }),
     loadTextAndColors('btn_mocap.txt', rawBtnMocapText, btnMocapColorCfg),
     loadTextAndColors('btn_360cap.txt', rawBtn360capText, btn360capColorCfg),
     loadTextAndColors('btn_reference.txt', rawBtnReferenceText, btnReferenceColorCfg),
@@ -218,7 +311,11 @@ async function loadLayoutAssets() {
 }
 
 async function reloadColorConfigs() {
-  headerColorCfg.value = await loadDisplayAssetColorConfig(currentHeaderFile.value)
+  await Promise.all(
+    AVAILABLE_HEADERS.map(async (file) => {
+      headerAssets[file].colors = await loadDisplayAssetColorConfig(file)
+    }),
+  )
   noteboxColorCfg.value = await loadDisplayAssetColorConfig(NOTEBOX_FILE)
   buttontitleColorCfg.value = await loadDisplayAssetColorConfig(BUTTONTITLE_FILE)
   btnMocapColorCfg.value = await loadDisplayAssetColorConfig('btn_mocap.txt')
@@ -241,7 +338,12 @@ onMounted(() => {
       <div class="ansi-header-stack">
         <div class="ansi-vga ansi-header-top-spacer" aria-hidden="true" />
         <div class="ansi-header-canvas">
-          <pre class="ansi-vga ansi-pre" aria-label="Header-Grafik (ANSI)"><template
+          <pre
+            :key="currentHeaderFile"
+            class="ansi-vga ansi-pre"
+            aria-label="Header-Grafik (ANSI). Klicken wechselt zum nächsten Logo."
+            @click="onHeaderGraphicClick"
+          ><template
             v-for="(ln, li) in headerLines"
             :key="`h-${li}`"
           ><template
@@ -251,15 +353,21 @@ onMounted(() => {
             v-if="part.role === 'editor-link'"
             type="button"
             class="ansi-editor-link"
-            :class="clsForSeg(part.seg)"
-            :style="styleForSeg(part.seg, headerPalette)"
             :aria-label="`${EDITOR_LINK_TEXT} — Editor öffnen`"
-            @click="emit('enter-editor')"
-          >{{ part.seg.text }}</button><span
+            @click.capture.stop.prevent="onEnterEditor"
+          ><span
+            v-for="(seg, si) in part.segments"
+            :key="`h-${li}-${pi}-${si}`"
+            :class="clsForSeg(seg)"
+            :style="styleForSeg(seg, headerPalette)"
+          >{{ seg.text }}</span></button><template
             v-else
-            :class="clsForSeg(part.seg)"
-            :style="styleForSeg(part.seg, headerPalette)"
-          >{{ part.seg.text }}</span></template><span class="ansi-nl"></span></template></pre>
+          ><span
+            v-for="(seg, si) in part.segments"
+            :key="`h-${li}-${pi}-${si}`"
+            :class="clsForSeg(seg)"
+            :style="styleForSeg(seg, headerPalette)"
+          >{{ seg.text }}</span></template></template><span class="ansi-nl"></span></template></pre>
         </div>
 
         <div class="ansi-vga ansi-header-line-spacer ansi-header-line-spacer--double" aria-hidden="true" />
@@ -274,6 +382,7 @@ onMounted(() => {
         >{{ seg.text }}</span><span class="ansi-nl"></span></template></pre>
         <div class="ansi-vga ansi-header-line-spacer ansi-header-line-spacer--double" aria-hidden="true" />
 
+        <div class="ansi-nav-block">
         <pre class="ansi-vga ansi-buttontitle" aria-label="Navigationstitel"><template
           v-for="(ln, li) in buttontitleLines"
           :key="`t-${li}`"
@@ -309,6 +418,7 @@ onMounted(() => {
             >{{ part.seg.text }}</span></span></template></pre>
           </button>
         </nav>
+        </div>
       </div>
     </div>
   </header>
@@ -377,12 +487,19 @@ onMounted(() => {
   filter: brightness(1.08);
 }
 
+.ansi-nav-block {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  width: max-content;
+  max-width: 100%;
+}
+
 .ansi-buttontitle {
-  display: inline-block;
+  display: block;
   width: 100%;
-  text-align: center;
   color: #e5e7eb;
-  margin-bottom: 0;
+  margin: 0;
 }
 
 .ansi-header-scanlines {
@@ -418,10 +535,13 @@ onMounted(() => {
   color: #e5e7eb;
   text-shadow: 0 0 10px rgb(250 204 21 / 0.16);
   background-color: transparent;
+  cursor: pointer;
 }
 
 .ansi-editor-link {
   display: inline;
+  position: relative;
+  z-index: 2;
   padding: 0;
   margin: 0;
   border: none;
@@ -432,6 +552,7 @@ onMounted(() => {
   text-shadow: inherit;
   color: inherit;
   cursor: pointer;
+  pointer-events: auto;
   -webkit-appearance: none;
   appearance: none;
 }
@@ -447,10 +568,10 @@ onMounted(() => {
 
 .ansi-nav {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
+  flex-wrap: nowrap;
+  justify-content: space-between;
   align-items: flex-start;
-  gap: clamp(10px, 2vw, 18px);
+  gap: 0;
   width: 100%;
 }
 

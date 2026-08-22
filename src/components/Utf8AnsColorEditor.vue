@@ -1,6 +1,7 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { ROW_SIZE, hexToRgb, normalizePalette, rgbToHex } from '../utils/ansiPalette.js'
+import { centerPadPlainLines } from '../utils/ansiPlainRender.js'
 
 const props = defineProps({
   title: { type: String, required: true },
@@ -13,6 +14,8 @@ const props = defineProps({
   importConfig: { type: Function, required: true },
   downloadConfig: { type: Function, required: true },
   projectMissingMessage: { type: String, required: true },
+  /** Pad each line to this many character cells (trailing spaces stay paintable). */
+  minLineWidth: { type: Number, default: 0 },
 })
 
 const resolvedFileName = computed(() => props.assetFileName || props.ansiFileName)
@@ -195,7 +198,7 @@ async function loadAssetText() {
     return
   }
   loadError.value = ''
-  rawText.value = (await res.text()).replace(/\r\n/g, '\n').trimEnd()
+  rawText.value = centerPadPlainLines(await res.text(), props.minLineWidth)
 }
 
 watch(resolvedFileName, () => {
