@@ -38,6 +38,9 @@ function applyVisualViewportBox(el) {
     el.style.bottom = 'auto'
     return
   }
+  // Native page-pinch würde sonst das Overlay mitskalieren und den Bild-Zoom
+  // optisch wieder aufheben. URL-Leiste ändert die Höhe bei scale === 1.
+  if (vv.scale && vv.scale !== 1) return
   el.style.top = `${vv.offsetTop}px`
   el.style.left = `${vv.offsetLeft}px`
   el.style.width = `${vv.width}px`

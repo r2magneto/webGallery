@@ -27,6 +27,7 @@ import { createGridHostWidthObserver } from '../utils/gridHostResize.js'
 import GalleryScrollbar from './GalleryScrollbar.vue'
 import { useGasPedalScroll } from '../composables/useGasPedalScroll.js'
 import { useMobileLayout } from '../composables/useMobileLayout.js'
+import { useLightboxPinchZoom } from '../composables/useLightboxPinchZoom.js'
 import {
   resetViewportZoom,
   restoreViewportZoom,
@@ -280,6 +281,17 @@ const lbContentWrapRef = ref(null)
 const lbOverlayRef = ref(null)
 const morphShellRef = ref(null)
 const morphImgRef = ref(null)
+
+const lbPinch = useLightboxPinchZoom({
+  isEnabled: () => isMobileLayout.value && viewerMode.value === 'viewing',
+})
+/** Top-level refs, damit das Template sie wirklich entpackt (sonst kein sichtbarer Zoom). */
+const lbImageZoomed = computed(
+  () => isMobileLayout.value && lbPinch.isZoomed.value,
+)
+const lbPinchStyle = computed(() =>
+  isMobileLayout.value ? lbPinch.style.value : undefined,
+)
 
 /** Aktuelles, deterministisch berechnetes Box-Layout der Vollansicht. */
 const lbLayout = ref(null)
@@ -929,6 +941,7 @@ function runCloseLightboxMorph() {
 
 function closeLightbox() {
   if (lightboxIndex.value === null) return
+  lbPinch.reset()
   startLenisScroll()
   if (viewerMode.value === 'opening') {
     clearMorphTimer()
@@ -952,6 +965,15 @@ function closeLightbox() {
     return
   }
   runCloseLightboxMorph()
+}
+
+function onLightboxDismissClick() {
+  if (lbPinch.shouldSuppressClick()) return
+  if (isMobileLayout.value && lbPinch.isZoomed.value) {
+    lbPinch.reset({ animate: true })
+    return
+  }
+  closeLightbox()
 }
 
 function prevImage() {
@@ -1004,9 +1026,12 @@ watch(lightboxOpen, async (open) => {
       if (lbOverlayRef.value) {
         bindOverlayToVisualViewport(lbOverlayRef.value)
       }
+      lbPinch.attach()
     }
     return
   }
+  lbPinch.detach()
+  lbPinch.reset()
   unbindOverlayFromVisualViewport()
   restoreViewportZoom()
   clearLbAspectLock()
@@ -1116,6 +1141,7 @@ watch(viewerMode, (m) => {
  */
 watch(lightboxIndex, (idx) => {
   isHighResLoaded.value = false
+  lbPinch.reset()
   if (idx == null) return
   const src = layout.value[idx]?.src
   if (!src) return
@@ -1188,6 +1214,7 @@ function onWindowResizeLightbox() {
 
 // Mode/Orientierung/Info ändern die Reserven bzw. die Textzeile → neu rechnen.
 watch([isMobileLayout, isLandscape, infoVisible], () => {
+  lbPinch.reset()
   if (lightboxIndex.value != null && viewerMode.value !== 'idle') {
     recomputeLbLayout()
   }
@@ -1214,6 +1241,8 @@ onBeforeUnmount(() => {
   cancelScheduledResizeLenis()
   unbindOverlayFromVisualViewport()
   restoreViewportZoom()
+  lbPinch.detach()
+  lbPinch.reset()
   if (lightboxOpen.value) startLenisScroll()
 })
 </script>
@@ -1336,11 +1365,12 @@ onBeforeUnmount(() => {
             'lb-overlay--landscape': isMobileLandscape,
             'lb-overlay--opening': viewerMode === 'opening',
             'lb-overlay--closing': viewerMode === 'closing',
+            'lb-overlay--zoomed': lbImageZoomed,
           }"
           role="dialog"
           aria-modal="true"
           aria-label="Bildansicht"
-          @click.self="closeLightbox"
+          @click.self="onLightboxDismissClick"
         >
           <Transition name="lb-dim" appear>
             <div
@@ -1348,7 +1378,7 @@ onBeforeUnmount(() => {
               class="lb-backdrop absolute inset-0 z-0 will-change-[opacity]"
               :style="lightboxBackdropStyle"
               aria-hidden="true"
-              @click="closeLightbox"
+              @click="onLightboxDismissClick"
             />
           </Transition>
 
@@ -1392,16 +1422,22 @@ onBeforeUnmount(() => {
           <div
             v-if="viewerMode === 'viewing' && lightboxIndex !== null"
             class="lb-viewing-shell relative z-[15] flex min-h-[min(90vh,100%)] min-w-[min(95vw,100%)] max-h-[92vh] max-w-[min(95vw,100%)] items-center justify-center"
+            @touchstart.prevent="lbPinch.onTouchStart"
+            @touchmove.prevent="lbPinch.onTouchMove"
+            @touchend="lbPinch.onTouchEnd"
+            @touchcancel="lbPinch.onTouchEnd"
           >
             <div class="lb-fade-stage">
               <Transition name="lb-fade">
                 <div :key="lightboxIndex" class="lb-fade-layer">
                   <div
                     ref="lbContentWrapRef"
-                    class="lb-framed lb-frame-box mx-auto overflow-hidden bg-neutral-950/30 outline outline-[1px] outline-yellow-400"
+                    class="lb-framed lb-frame-box mx-auto bg-neutral-950/30 outline outline-[1px] outline-yellow-400"
+                    :class="{ 'lb-framed--zoomed': lbImageZoomed }"
                     :style="lbFrameStyle"
                   >
                     <div class="lb-img-area">
+                      <div class="lb-zoom-layer" :style="lbPinchStyle">
                       <!-- Ebene 1 (unten): gecachtes Proxy → sofort scharf, trägt den Zoom. -->
                       <img
                         :src="currentLightboxProxySrc"
@@ -1419,6 +1455,7 @@ onBeforeUnmount(() => {
                         draggable="false"
                         @load="onHighResLoad"
                       />
+                      </div>
                     </div>
                     <div
                       v-if="captionInFrame"
@@ -1730,6 +1767,35 @@ onBeforeUnmount(() => {
   touch-action: none;
 }
 
+.lb-overlay--mobile .lb-img-area,
+.lb-overlay--mobile .lb-main-img {
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.lb-framed.lb-framed--zoomed {
+  outline-color: transparent;
+  overflow: visible;
+  background-color: transparent;
+}
+
+.lb-framed.lb-framed--zoomed .lb-img-area {
+  overflow: visible;
+  z-index: 3;
+}
+
+.lb-framed.lb-framed--zoomed .lb-caption {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.lb-overlay--zoomed .lb-fade-stage,
+.lb-overlay--zoomed .lb-fade-layer {
+  overflow: visible;
+}
+
 /*
  * Crossfade-Bühne: feste Höhe (= berechnete Maximalhöhe), beide Bild-Layer
  * absolut übereinander. Bildwechsel = reines Opacity-Crossfade (kein Sliden).
@@ -1776,6 +1842,7 @@ onBeforeUnmount(() => {
   padding: 10px;
   box-sizing: border-box;
   max-width: 100%;
+  overflow: hidden;
 }
 
 .lb-morph-shell .lb-frame-box {
@@ -1791,6 +1858,12 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: center;
   min-height: 0;
+  overflow: hidden;
+}
+
+.lb-zoom-layer {
+  position: absolute;
+  inset: 0;
 }
 
 .lb-main-img {
@@ -1898,6 +1971,8 @@ onBeforeUnmount(() => {
   min-height: 0;
   max-width: 100%;
   max-height: 100%;
+  overflow: visible;
+  touch-action: none;
 }
 
 /* Bühne füllt die (jetzt definite) Shell vollständig aus. */

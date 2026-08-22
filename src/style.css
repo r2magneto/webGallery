@@ -47,6 +47,12 @@ html.lenis::-webkit-scrollbar {
   scroll-behavior: auto !important;
 }
 
+/* Lightbox-Pinch: kein nativer Seiten-Zoom, während die Vollansicht offen ist. */
+html.lb-pinch-lock,
+html.lb-pinch-lock body {
+  touch-action: none;
+}
+
 /*
  * Custom-Cursors: 32×32 PNG liegen nach dem Build im selben Ordner wie diese CSS-Datei.
  * Hotspot 16 16 = Bildmitte.
